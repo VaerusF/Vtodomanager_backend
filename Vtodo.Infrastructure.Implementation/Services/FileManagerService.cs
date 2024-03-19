@@ -5,7 +5,7 @@ using Vtodo.Infrastructure.Interfaces.Services;
 
 namespace Vtodo.Infrastructure.Implementation.Services
 {
-    public class FileManagerService : IFileManagerService
+    internal class FileManagerService : IFileManagerService
     {
         public string GetBaseFolderPath()
         {
