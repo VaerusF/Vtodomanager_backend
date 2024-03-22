@@ -1,9 +1,9 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 
 ENV ASPNETCORE_URLS=http://+:8080
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["Vtodo.Web/Vtodo.Web.csproj", "Vtodo.Web/"]
 RUN dotnet restore "Vtodo.Web/Vtodo.Web.csproj"
@@ -14,7 +14,7 @@ RUN dotnet build "Vtodo.Web.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "Vtodo.Web.csproj" -c Release -o /app/publish
 
-RUN dotnet tool install --global dotnet-ef --version 7.0.8 
+RUN dotnet tool install --global dotnet-ef --version 8.0.3
 ENV PATH="$PATH:/root/.dotnet/tools"
 
 FROM base AS final

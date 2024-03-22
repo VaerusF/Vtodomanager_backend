@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -9,8 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoMapper" Version="12.0.1" />
-      <PackageReference Include="MediatR" Version="12.0.0" />
+      <PackageReference Include="AutoMapper" Version="13.0.1" />
+      <PackageReference Include="MediatR" Version="12.2.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -21,6 +23,11 @@
 
     <ItemGroup>
       <Folder Include="Handlers\Accounts\Queries" />
+      <Folder Include="Handlers\Errors\Dto\AlreadyExists\" />
+      <Folder Include="Handlers\Errors\Dto\InvalidOperation\" />
+      <Folder Include="Handlers\Errors\Dto\NotFound\" />
+      <Folder Include="Handlers\Errors\Dto\Security\" />
+      <Folder Include="Handlers\Errors\Dto\Validation\" />
       <Folder Include="Handlers\ProjectsRoles\Mappings" />
       <Folder Include="Handlers\ProjectsRoles\Queries" />
     </ItemGroup>
