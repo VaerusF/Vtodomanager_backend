@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -7,6 +8,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToRoot;
 using Xunit;
 
@@ -17,15 +20,18 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulMoveTaskToRoot_ReturnsSystemTask()
+        public async void Handle_SuccessfulMoveTaskToRoot_ReturnsSystemTask()
         {
             SetupDbContext();
 
             var request = new MoveTaskToRootRequest() { Id = 2 };
 
-            var moveTaskToRootRequestHandler = new MoveTaskToRootRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var moveTaskToRootRequestHandler = new MoveTaskToRootRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                SetupMockMediatorService().Object);
 
-            moveTaskToRootRequestHandler.Handle(request, CancellationToken.None);
+            await moveTaskToRootRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.Id && x.ParentTask != null));
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.Id && x.ParentTask == null));
@@ -34,19 +40,35 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         }
 
         [Fact]
-        public async void Handle_TaskNotFound_ThrowsTaskNotFoundException()
+        public async void Handle_TaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
 
             var request = new MoveTaskToRootRequest() { Id = 20 };
 
-            var moveTaskToRootRequestHandler = new MoveTaskToRootRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
+            var moveTaskToRootRequestHandler = new MoveTaskToRootRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
 
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => moveTaskToRootRequestHandler.Handle(request, CancellationToken.None));
+            await moveTaskToRootRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
 
             CleanUp();
         }
-
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
+        }
+        
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()
         {
             var mock = new Mock<IProjectSecurityService>();

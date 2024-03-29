@@ -6,6 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.InvalidOperation;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask
 {
@@ -13,13 +16,16 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
+        private readonly IMediator _mediator;
 
         public MoveTaskToAnotherTaskRequestHandler(
             IDbContext dbContext, 
-            IProjectSecurityService projectSecurityService)
+            IProjectSecurityService projectSecurityService,
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
+            _mediator = mediator;
         }
         
         public async Task Handle(MoveTaskToAnotherTaskRequest request, CancellationToken cancellationToken)
@@ -29,21 +35,44 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask
                 .Include(t => t.Board.Project)
                 .Include(t => t.ParentTask)
                 .FirstOrDefaultAsync(x => x.Id == request.TaskId, cancellationToken);
-            if (task == null) throw new TaskNotFoundException();
+            if (task == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new TaskNotFoundError() }, cancellationToken); 
+                return;
+            }
             
             _projectSecurityService.CheckAccess(task.Board.Project, ProjectRoles.ProjectUpdate);
-            
-            if (task.Id == request.NewParentTaskId) throw new TaskIdEqualNewParentTaskIdException();
 
-            if(task.ParentTask != null)
-                if (task.ParentTask.Id == request.NewParentTaskId) throw new NewParentTaskIdEqualOldIdException();
+            if (task.Id == request.NewParentTaskId)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new TaskIdEqualNewParentTaskIdError() }, cancellationToken); 
+                return;
+            }
+
+            if (task.ParentTask != null)
+            {
+                if (task.ParentTask.Id == request.NewParentTaskId)
+                {
+                    await _mediator.Send(new SendErrorToClientRequest() { Error = new NewParentTaskIdEqualOldIdError() }, cancellationToken); 
+                    return;
+                }
+            }
 
             var newParentTask = await _dbContext.Tasks
                 .Include(t => t.Board)
                 .FirstOrDefaultAsync(x => x.Id == request.NewParentTaskId, cancellationToken);
-            
-            if (newParentTask == null) throw new TaskNotFoundException("New parent task not found");
-            if (task.Board.Id != newParentTask.Board.Id) throw new AnotherBoardException();
+
+            if (newParentTask == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new TaskNotFoundError() }, cancellationToken); 
+                return;
+            }
+
+            if (task.Board.Id != newParentTask.Board.Id)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new AnotherBoardError() }, cancellationToken); 
+                return;
+            }
             
             task.ParentTask = newParentTask;
 

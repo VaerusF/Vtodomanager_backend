@@ -1,4 +1,5 @@
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.DomainServices.Interfaces;
@@ -8,6 +9,9 @@ using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Accounts.Commands.LoginByPassword;
 using Vtodo.UseCases.Handlers.Accounts.Dto;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
+using Vtodo.UseCases.Handlers.Errors.Dto.Security;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
@@ -39,7 +43,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
                 _dbContext,
                 mockSecurityService.Object,
                 SetupMockJwtService().Object,
-                SetupMockConfigService().Object
+                SetupMockConfigService().Object,
+                SetupMockMediatorService().Object
             );
 
             var result = loginByPasswordRequestHandler.Handle(request, CancellationToken.None);
@@ -50,7 +55,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
         }
 
         [Fact]
-        public async void Handle_AccountNotFound_ThrowsAccountNotFoundException()
+        public async void Handle_AccountNotFound_SendAccountNotFoundError()
         {
             SetupDbContext();
             
@@ -64,20 +69,27 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
                 It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<byte[]>())).Returns(true);
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new AccountNotFoundError();
+            
             var loginByPasswordRequestHandler = new LoginByPasswordRequestHandler(
                 _dbContext,
                 mockSecurityService.Object,
                 SetupMockJwtService().Object,
-                SetupMockConfigService().Object
+                SetupMockConfigService().Object, 
+                mediatorMock.Object
             );
             
-            await Assert.ThrowsAsync<AccountNotFoundException>(() => loginByPasswordRequestHandler.Handle(request, CancellationToken.None));
+            var result = loginByPasswordRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_InvalidPassword_ThrowsInvalidPasswordException()
+        public async void Handle_InvalidPassword_SendInvalidPasswordError()
         {
             SetupDbContext();
             
@@ -87,23 +99,38 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
             var request = new LoginByPasswordRequest() { LoginByPasswordDto = loginByPasswordDto };
 
             _dbContext.Accounts.Add(new Account() {Email = loginByPasswordDto.Email, Username = "test", HashedPassword = "test", Salt = new byte[64]});
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             
             var mockSecurityService = SetupMockSecurityService();
             mockSecurityService.Setup(x => x.VerifyPassword(
                 It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<byte[]>())).Returns(false);
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new InvalidPasswordError();
+            
             var loginByPasswordRequestHandler = new LoginByPasswordRequestHandler(
                 _dbContext,
                 mockSecurityService.Object,
                 SetupMockJwtService().Object,
-                SetupMockConfigService().Object
+                SetupMockConfigService().Object,
+                mediatorMock.Object
             );
             
-            await Assert.ThrowsAsync<InvalidPasswordException>(() => loginByPasswordRequestHandler.Handle(request, CancellationToken.None));
+            var result = loginByPasswordRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+            Assert.Null(result.Result);
             
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<ISecurityService> SetupMockSecurityService()

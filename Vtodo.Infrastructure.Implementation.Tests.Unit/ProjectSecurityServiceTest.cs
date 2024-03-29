@@ -438,7 +438,7 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
         private static Mock<ICurrentAccountService> SetupMockCurrentAccountService(Account account)
         {
             var currentAccountService = new Mock<ICurrentAccountService>();
-            currentAccountService.Setup(x => x.Account).Returns(account);
+            currentAccountService.Setup(x => x.GetAccount()).Returns(account);
 
             return currentAccountService;
         }

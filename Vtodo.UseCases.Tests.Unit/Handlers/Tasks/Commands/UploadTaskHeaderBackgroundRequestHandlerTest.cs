@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UploadTaskHeaderBackground;
 using Xunit;
 
@@ -18,7 +21,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         private AppDbContext _dbContext = null!;
         
         [Fact]
-        public void Handle_SuccessfulUploadTaskFile_ReturnsSystemTask()
+        public async void Handle_SuccessfulUploadTaskFile_ReturnsSystemTask()
         {
             SetupDbContext();
             
@@ -27,9 +30,11 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var uploadTaskHeaderBackgroundRequestHandler = new UploadTaskHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
-                SetupProjectFilesServiceMock().Object);
+                SetupProjectFilesServiceMock().Object,
+                SetupMockMediatorService().Object
+            );
 
-            uploadTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            await uploadTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
 
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x =>
                 x.Id == request.Id && x.ImageHeaderPath != null));
@@ -42,22 +47,37 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         }
 
         [Fact]
-        public async void Handle_TaskNotFound_ThrowsTaskNotFoundException()
+        public async void Handle_TaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
             
             var request = new UploadTaskHeaderBackgroundRequest() {Id = 100, BackgroundImage = new MemoryStream(), FileName = "test.png"};
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
             var uploadTaskHeaderBackgroundRequestHandler = new UploadTaskHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
-                SetupProjectFilesServiceMock().Object);
-
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => uploadTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None));
+                SetupProjectFilesServiceMock().Object, 
+                mediatorMock.Object
+            );
             
+            await uploadTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
             CleanUp();
         }
-
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
+        }
+        
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()
         {
             var mock = new Mock<IProjectSecurityService>();

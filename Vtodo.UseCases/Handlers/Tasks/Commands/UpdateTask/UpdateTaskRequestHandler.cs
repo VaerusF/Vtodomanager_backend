@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
 {
@@ -17,13 +19,16 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
-
+        private readonly IMediator _mediator;
+        
         public UpdateTaskRequestHandler(
             IDbContext dbContext, 
-            IProjectSecurityService projectSecurityService)
+            IProjectSecurityService projectSecurityService,
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
+            _mediator = mediator;
         }
         
         public async Task Handle(UpdateTaskRequest request, CancellationToken cancellationToken)
@@ -34,7 +39,11 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
                 .Include(x => x.Board)
                 .Include(x => x.Board.Project)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken: cancellationToken);
-            if (task == null) throw new TaskNotFoundException();
+            if (task == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new TaskNotFoundError() }, cancellationToken); 
+                return;
+            }
 
             _projectSecurityService.CheckAccess(task.Board.Project, ProjectRoles.ProjectUpdate);
             

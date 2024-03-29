@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoardHeaderBackground;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
@@ -17,7 +20,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         private AppDbContext _dbContext = null!;
         
         [Fact]
-        public void Handle_SuccessfulDeleteBoardHeaderBackground_ReturnsTask()
+        public async void Handle_SuccessfulDeleteBoardHeaderBackground_ReturnsTask()
         {
             SetupDbContext();
 
@@ -42,9 +45,10 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var deleteBoardHeaderBackgroundRequestHandler = new DeleteBoardHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
-                mockProjectFileService.Object);
+                mockProjectFileService.Object,
+                SetupMockMediatorService().Object);
             
-            deleteBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            await deleteBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.Null(_dbContext.ProjectBoardsFiles.FirstOrDefault(x => x.BoardId == request.Id && x.FileName == oldPath));
             Assert.Null(_dbContext.Boards.FirstOrDefault(x => x.Id == request.Id && x.ImageHeaderPath != null));
@@ -53,7 +57,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         }
         
         [Fact]
-        public async void Handle_BoardNotFound_ThrowsBoardNotFoundException()
+        public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
 
@@ -63,14 +67,29 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             mockProjectFileService.Setup(x =>
                 x.DeleteProjectFile(It.IsAny<Project>(), It.IsAny<Board>(), It.IsAny<string>())).Verifiable();
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new BoardNotFoundError();
+            
             var deleteBoardHeaderBackgroundRequestHandler = new DeleteBoardHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
-                mockProjectFileService.Object);
+                mockProjectFileService.Object,
+                mediatorMock.Object);
             
-            await Assert.ThrowsAsync<BoardNotFoundException>(() => deleteBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None));
+            await deleteBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

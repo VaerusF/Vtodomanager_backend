@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using AutoMapper;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -9,6 +10,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Projects.Dto;
 using Vtodo.UseCases.Handlers.Projects.Queries.GetProject;
 using Xunit;
@@ -20,7 +23,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulGetProject_ReturnsTaskProjectDto()
+        public async void Handle_SuccessfulGetProject_ReturnsTaskProjectDto()
         {
             SetupDbContext();
 
@@ -33,9 +36,14 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
                 CreationDate = new DateTimeOffset(_dbContext.Projects.First(x => x.Id == request.Id).CreationDate).ToUnixTimeMilliseconds()
             });
 
-            var getProjectRequestHandler = new GetProjectRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object, mapperMock.Object);
+            var getProjectRequestHandler = new GetProjectRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                mapperMock.Object, 
+                SetupMockMediatorService().Object
+            );
 
-            var result = getProjectRequestHandler.Handle(request, CancellationToken.None).Result;
+            var result = await getProjectRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(result);
 
@@ -43,17 +51,36 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
         }
 
         [Fact]
-        public async void Handle_ProjectNotFound_ThrowsProjectNotFoundException()
+        public async void Handle_ProjectNotFound_SendProjectNotFoundError()
         {
             SetupDbContext();
             
             var request = new GetProjectRequest() { Id = 10 };
 
-            var getProjectRequestHandler = new GetProjectRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object, SetupMapperMock().Object);
-
-            await Assert.ThrowsAsync<ProjectNotFoundException>(() => getProjectRequestHandler.Handle(request, CancellationToken.None));
-
+            var mediatorMock = SetupMockMediatorService();
+            var error = new ProjectNotFoundError();
+            
+            var getProjectRequestHandler = new GetProjectRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                SetupMapperMock().Object, 
+                mediatorMock.Object
+            );
+            
+            var result = await getProjectRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+            Assert.Null(result);
+            
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
 
         private static Mock<IMapper> SetupMapperMock()

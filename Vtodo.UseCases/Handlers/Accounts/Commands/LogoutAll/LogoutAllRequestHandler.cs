@@ -18,7 +18,7 @@ namespace Vtodo.UseCases.Handlers.Accounts.Commands.LogoutAll
         
         public async Task Handle(LogoutAllRequest request, CancellationToken cancellationToken)
         {
-            _jwtService.InvalidateAllRefreshTokens(_currentAccountService.Account);
+            _jwtService.InvalidateAllRefreshTokens(_currentAccountService.GetAccount());
         }
     }
 }

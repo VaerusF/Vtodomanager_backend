@@ -8,6 +8,8 @@ using MediatR;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace Vtodo.UseCases.Handlers.Boards.Commands.CreateBoard
 {
@@ -16,15 +18,18 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.CreateBoard
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
         
         public CreateBoardRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper)
+            IMapper mapper,
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _mapper = mapper;
+            _mediator = mediator;
         }
         
         public async Task Handle(CreateBoardRequest request, CancellationToken cancellationToken)
@@ -33,7 +38,11 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.CreateBoard
             var board = _mapper.Map<Board>(createDto);
 
             var project = await _dbContext.Projects.FindAsync(createDto.ProjectId, cancellationToken);
-            if (project == null) throw new ProjectNotFoundException();
+            if (project == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new ProjectNotFoundError() }, cancellationToken); 
+                return;
+            }
             
             _projectSecurityService.CheckAccess(project, ProjectRoles.ProjectUpdate);
             

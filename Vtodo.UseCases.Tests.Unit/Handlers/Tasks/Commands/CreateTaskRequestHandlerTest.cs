@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using AutoMapper;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Commands.CreateTask;
 using Vtodo.UseCases.Handlers.Tasks.Dto;
 using Xunit;
@@ -19,7 +22,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulCreateTask_ReturnsSystemTask()
+        public async void Handle_SuccessfulCreateTask_ReturnsSystemTask()
         {
             SetupDbContext();
             
@@ -36,8 +39,12 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 PrioritySort = createTaskDto.PrioritySort
             });
             
-            var createTaskRequestHandler = new CreateTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object, mapperMock.Object);
-            createTaskRequestHandler.Handle(request, CancellationToken.None);
+            var createTaskRequestHandler = new CreateTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                mapperMock.Object,
+                SetupMockMediatorService().Object);
+            await createTaskRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Title == createTaskDto.Title && 
                 x.Description == createTaskDto.Description && 
@@ -57,6 +64,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             
             var request = new CreateTaskRequest() { CreateTaskDto = createTaskDto};
 
+            var mediatorMock = SetupMockMediatorService();
+            var error = new BoardNotFoundError();
+            
             var mapperMock = SetupMapperMock();
             mapperMock.Setup(x => x.Map<TaskM>(It.IsAny<CreateTaskDto>())).Returns(new TaskM()
             {
@@ -66,15 +76,22 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 PrioritySort = createTaskDto.PrioritySort
             });
             
-            var createTaskRequestHandler = new CreateTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object, mapperMock.Object);
+            var createTaskRequestHandler = new CreateTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                mapperMock.Object,
+                mediatorMock.Object);
             
-            await Assert.ThrowsAsync<BoardNotFoundException>(() => createTaskRequestHandler.Handle(request, CancellationToken.None));
-
+            await createTaskRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+            
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_ParentTaskNotFound_ThrowsTaskNotFoundException()
+        public async void Handle_ParentTaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
             
@@ -82,6 +99,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             
             var request = new CreateTaskRequest() { CreateTaskDto = createTaskDto};
 
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
             var mapperMock = SetupMapperMock();
             mapperMock.Setup(x => x.Map<TaskM>(It.IsAny<CreateTaskDto>())).Returns(new TaskM()
             {
@@ -91,11 +111,25 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 PrioritySort = createTaskDto.PrioritySort
             });
             
-            var createTaskRequestHandler = new CreateTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object, mapperMock.Object);
+            var createTaskRequestHandler = new CreateTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                mapperMock.Object,
+                mediatorMock.Object);
             
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => createTaskRequestHandler.Handle(request, CancellationToken.None));
+            await createTaskRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
 
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

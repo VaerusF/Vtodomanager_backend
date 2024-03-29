@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -7,6 +8,9 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.InvalidOperation;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask;
 using Xunit;
 
@@ -17,14 +21,17 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulMoveTaskToAnotherTask_ReturnsSystemTask()
+        public async void Handle_SuccessfulMoveTaskToAnotherTask_ReturnsSystemTask()
         {
             SetupDbContext();
 
             var request = new MoveTaskToAnotherTaskRequest() { TaskId = 1, NewParentTaskId = 2};
-            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                SetupMockMediatorService().Object);
 
-            moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
+            await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.TaskId && x.ParentTask == null));
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.TaskId && x.ParentTask != null && x.ParentTask.Id == request.NewParentTaskId));
@@ -33,68 +40,126 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         }
 
         [Fact]
-        public async void Handle_TaskNotFound_ThrowsTaskNotFoundException()
+        public async void Handle_TaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
             
             var request = new MoveTaskToAnotherTaskRequest() { TaskId = 10, NewParentTaskId = 2};
-            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None));
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
+            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                mediatorMock.Object);
+
+            await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
             CleanUp();
         }
 
         [Fact]
-        public async void Handle_TaskIdEqualNewParentTaskId_ThrowsTaskIdEqualNewParentTaskIdException()
+        public async void Handle_TaskIdEqualNewParentTaskId_SendTaskIdEqualNewParentTaskIdError()
         {
             SetupDbContext();
             
             var request = new MoveTaskToAnotherTaskRequest() { TaskId = 1, NewParentTaskId = 1};
-            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<TaskIdEqualNewParentTaskIdException>(() => moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None));
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskIdEqualNewParentTaskIdError();
+            
+            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object
+            );
+
+            await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
             CleanUp();
         }
 
         [Fact]
-        public async void Handle_NewParentTaskIdEqualOldId_ThrowsNewParentTaskIdEqualOldIdException()
+        public async void Handle_NewParentTaskIdEqualOldId_SendNewParentTaskIdEqualOldIdError()
         {
             SetupDbContext();
             
             var request = new MoveTaskToAnotherTaskRequest() { TaskId = 3, NewParentTaskId = 1};
-            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<NewParentTaskIdEqualOldIdException>(() => moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None));
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new NewParentTaskIdEqualOldIdError();
+            
+            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
+
+            await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_NewParentTaskNotFound_ThrowsTaskNotFoundException()
+        public async void Handle_NewParentTaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
             
             var request = new MoveTaskToAnotherTaskRequest() { TaskId = 1, NewParentTaskId = 100};
-            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None));
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
+            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
+
+            await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_AttemptMoveTaskToAnotherBoard_ThrowsAnotherBoardException()
+        public async void Handle_AnotherBoardError_SendAnotherBoardError()
         {
             SetupDbContext();
             
             var request = new MoveTaskToAnotherTaskRequest() { TaskId = 1, NewParentTaskId = 4};
-            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<AnotherBoardException>(() => moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None));
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new AnotherBoardError();
+            
+            var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
+            
+            await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

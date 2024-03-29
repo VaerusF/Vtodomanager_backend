@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using AutoMapper;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -10,6 +11,8 @@ using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoard;
 using Vtodo.UseCases.Handlers.Boards.Dto;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
@@ -19,34 +22,54 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
          private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulDeleteBoard_ReturnsTask()
+        public async void Handle_SuccessfulDeleteBoard_ReturnsTask()
         {
             SetupDbContext();
             
             var request = new DeleteBoardRequest() { Id = 1 };
 
-            var deleteBoardRequestHandler = new DeleteBoardRequestHandler(_dbContext, SetupProjectSecurityService().Object);
+            var deleteBoardRequestHandler = new DeleteBoardRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object,
+                SetupMockMediatorService().Object);
             
             Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Id == 1));
             
-            deleteBoardRequestHandler.Handle(request, CancellationToken.None);
+            await deleteBoardRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.Null(_dbContext.Boards.FirstOrDefault(x => x.Id == 1));
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_BoardNotFound_ThrowsBoardNotFoundException()
+        public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
 
             var request = new DeleteBoardRequest() { Id = 2 };
-
-            var deleteBoardRequestHandler = new DeleteBoardRequestHandler(_dbContext, SetupProjectSecurityService().Object);
             
-            await Assert.ThrowsAsync<BoardNotFoundException>(() => deleteBoardRequestHandler.Handle(request, CancellationToken.None));
+            var mediatorMock = SetupMockMediatorService();
+            var error = new BoardNotFoundError();
+            
+            var deleteBoardRequestHandler = new DeleteBoardRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object,
+                mediatorMock.Object);
+            
+            await deleteBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
        
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityService()

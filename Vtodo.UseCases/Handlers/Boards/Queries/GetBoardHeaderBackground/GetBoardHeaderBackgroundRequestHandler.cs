@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardHeaderBackground
 {
@@ -13,13 +15,16 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardHeaderBackground
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectsFilesService _projectFilesService;
+        private readonly IMediator _mediator;
         
         public GetBoardHeaderBackgroundRequestHandler(
             IDbContext dbContext,
-            IProjectsFilesService projectFilesService)
+            IProjectsFilesService projectFilesService,
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectFilesService = projectFilesService;
+            _mediator = mediator;
         }
         
         public async Task<FileStream?> Handle(GetBoardHeaderBackgroundRequest request, CancellationToken cancellationToken)
@@ -29,7 +34,11 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardHeaderBackground
                 .AsNoTracking()
                 .SingleOrDefaultAsync(p => p.Id == request.Id, cancellationToken: cancellationToken);
 
-            if (board == null) throw new BoardNotFoundException();
+            if (board == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new BoardNotFoundError() }, cancellationToken); 
+                return null;
+            }
 
             if (board.ImageHeaderPath == null) return null;
 

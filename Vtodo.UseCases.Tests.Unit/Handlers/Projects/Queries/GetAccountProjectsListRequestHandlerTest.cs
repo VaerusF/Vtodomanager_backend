@@ -1,4 +1,5 @@
 using AutoMapper;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -22,7 +23,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
             SetupDbContext();
 
             var currentAccountServiceMock = SetupCurrentAccountService();
-            currentAccountServiceMock.Setup(x => x.Account).Returns(_dbContext.Accounts.First(x => x.Id == 1));
+            currentAccountServiceMock.Setup(x => x.GetAccount()).Returns(_dbContext.Accounts.First(x => x.Id == 1));
             
             var request = new GetAccountProjectsListRequest() { };
 

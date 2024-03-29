@@ -34,7 +34,7 @@ namespace Vtodo.UseCases.Handlers.Projects.Queries.GetUserProjectList
         
         public async Task<List<ProjectDto>> Handle(GetAccountProjectsListRequest request, CancellationToken cancellationToken)
         {
-            var account = _currentAccountService.Account;
+            var account = _currentAccountService.GetAccount();
 
             var projects = await _dbContext.ProjectAccountsRoles
                 .AsNoTracking()

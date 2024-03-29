@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTaskHeaderBackground
 {
@@ -13,13 +15,16 @@ namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTaskHeaderBackground
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectsFilesService _projectFilesService;
+        private readonly IMediator _mediator;
         
         public GetTaskHeaderBackgroundRequestHandler(
             IDbContext dbContext,
-            IProjectsFilesService projectFilesService)
+            IProjectsFilesService projectFilesService,
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectFilesService = projectFilesService;
+            _mediator = mediator;
         }
         
         public async Task<FileStream?> Handle(GetTaskHeaderBackgroundRequest request, CancellationToken cancellationToken)
@@ -31,7 +36,11 @@ namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTaskHeaderBackground
                 .AsNoTracking()
                 .SingleOrDefaultAsync(p => p.Id == request.Id, cancellationToken: cancellationToken);
 
-            if (task == null) throw new TaskNotFoundException();
+            if (task == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new TaskNotFoundError() }, cancellationToken); 
+                return null;
+            }
 
             if (task.ImageHeaderPath == null) return null;
 

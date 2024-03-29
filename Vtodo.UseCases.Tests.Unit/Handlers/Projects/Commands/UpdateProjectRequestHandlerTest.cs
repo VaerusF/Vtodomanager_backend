@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -7,6 +8,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Projects.Commands.UpdateProject;
 using Vtodo.UseCases.Handlers.Projects.Dto;
 using Xunit;
@@ -18,7 +21,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         private AppDbContext _dbContext = null!;
         
         [Fact]
-        public void Handle_SuccessfulUpdateProject_ReturnsTask()
+        public async void Handle_SuccessfulUpdateProject_ReturnsTask()
         {
             SetupDbContext();
 
@@ -26,9 +29,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             
             var request = new UpdateProjectRequest() { Id = 1, UpdateProjectDto = updateProjectDto};
 
-            var updateProjectRequestHandler = new UpdateProjectRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var updateProjectRequestHandler = new UpdateProjectRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                SetupMockMediatorService().Object
+            );
 
-            updateProjectRequestHandler.Handle(request, CancellationToken.None);
+            await updateProjectRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(_dbContext.Projects.FirstOrDefault(x => x.Id == request.Id && x.Title == updateProjectDto.Title));
             
@@ -44,11 +51,28 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             
             var request = new UpdateProjectRequest() { Id = 2, UpdateProjectDto = updateProjectDto };
 
-            var updateProjectRequestHandler = new UpdateProjectRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new ProjectNotFoundError();
+            
+            var updateProjectRequestHandler = new UpdateProjectRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                mediatorMock.Object
+            );
 
-            await Assert.ThrowsAsync<ProjectNotFoundException>(() => updateProjectRequestHandler.Handle(request, CancellationToken.None));
-
+            await updateProjectRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+            
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

@@ -18,7 +18,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulCreateProject_ReturnsTaskProjectDto()
+        public async void Handle_SuccessfulCreateProject_ReturnsTaskProjectDto()
         {
             SetupDbContext();
             
@@ -35,17 +35,18 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
                 SetupProjectSecurityServiceMock().Object, 
                 mapper.Object);
 
-            createProjectRequestHandler.Handle(request, CancellationToken.None);
+            await createProjectRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(_dbContext.Projects.FirstOrDefault(x => x.Title == createProjectDto.Title));
             
             CleanUp();
         }
 
+        
         private Mock<ICurrentAccountService> SetupCurrentAccountServiceMock()
         {
             var mock = new Mock<ICurrentAccountService>();
-            mock.Setup(x => x.Account).Returns(_dbContext.Accounts.First());
+            mock.Setup(x => x.GetAccount()).Returns(_dbContext.Accounts.First());
 
             return mock;
         }

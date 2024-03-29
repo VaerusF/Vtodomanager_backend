@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Commands.RevokeAllRole;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Dto;
 using Xunit;
@@ -19,16 +22,20 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulKickMember_ReturnsTask()
+        public async void Handle_SuccessfulKickMember_ReturnsTask()
         {
             SetupDbContext();
 
             var kickMemberDto = new KickMemberDto() { AccountId = 2};
             var request = new KickMemberRequest() { ProjectId = 1, KickMemberDto = kickMemberDto};
 
-            var kickMemberRequestHandler = new KickMemberRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var kickMemberRequestHandler = new KickMemberRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                SetupMockMediatorService().Object
+                );
 
-            kickMemberRequestHandler.Handle(request, CancellationToken.None);
+            await kickMemberRequestHandler.Handle(request, CancellationToken.None);
 
             Assert.Empty(_dbContext.ProjectAccountsRoles.Where(x => x.AccountId == kickMemberDto.AccountId && x.ProjectId == kickMemberDto.AccountId));
             
@@ -36,35 +43,61 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
         }
 
         [Fact]
-        public async void Handle_ProjectNotFound_ThrowsProjectNotFoundException()
+        public async void Handle_ProjectNotFound_SendProjectNotFoundError()
         {
             SetupDbContext();
             
             var kickMemberDto = new KickMemberDto() { AccountId = 2};
             var request = new KickMemberRequest() { ProjectId = 10, KickMemberDto = kickMemberDto};
 
-            var kickMemberRequestHandler = new KickMemberRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new ProjectNotFoundError();
+            
+            var kickMemberRequestHandler = new KickMemberRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
 
-            await Assert.ThrowsAsync<ProjectNotFoundException>(() => kickMemberRequestHandler.Handle(request, CancellationToken.None));
-
+            await kickMemberRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+            
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_AccountNotFound_ThrowsAccountNotFoundException()
+        public async void Handle_AccountNotFound_SendAccountNotFoundError()
         {
             SetupDbContext();
             
             var kickMemberDto = new KickMemberDto() { AccountId = 20};
             var request = new KickMemberRequest() { ProjectId = 1, KickMemberDto = kickMemberDto};
 
-            var kickMemberRequestHandler = new KickMemberRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new AccountNotFoundError();
+            
+            var kickMemberRequestHandler = new KickMemberRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
 
-            await Assert.ThrowsAsync<AccountNotFoundException>(() => kickMemberRequestHandler.Handle(request, CancellationToken.None));
+            await kickMemberRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
 
             CleanUp();
         }
 
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
+        }
+        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();

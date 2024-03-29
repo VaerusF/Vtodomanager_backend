@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -7,6 +8,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Queries.GetTaskHeaderBackground;
 using Xunit;
 
@@ -17,17 +20,36 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
          private AppDbContext _dbContext = null!;
 
         [Fact]
-        public async void Handle_TaskNotFound_TaskNotFoundException()
+        public async void Handle_TaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
 
             var request = new GetTaskHeaderBackgroundRequest() {Id = 2};
 
-            var getTaskHeaderBackgroundRequestHandler = new GetTaskHeaderBackgroundRequestHandler(_dbContext, SetupProjectFilesServiceMock().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
+            var getTaskHeaderBackgroundRequestHandler = new GetTaskHeaderBackgroundRequestHandler(
+                _dbContext, 
+                SetupProjectFilesServiceMock().Object, 
+                mediatorMock.Object
+            );
 
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => getTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None));
+            var result = await getTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+            Assert.Null(result);
+            
             CleanUp();
         } 
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
+        }
         
         private Mock<IProjectsFilesService> SetupProjectFilesServiceMock()
         {

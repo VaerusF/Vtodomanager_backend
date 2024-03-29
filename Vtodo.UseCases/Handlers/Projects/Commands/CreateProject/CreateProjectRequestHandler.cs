@@ -32,7 +32,7 @@ namespace Vtodo.UseCases.Handlers.Projects.Commands.CreateProject
         public async Task Handle(CreateProjectRequest request, CancellationToken cancellationToken)
         {
             var project = _mapper.Map<Project>(request.CreateProjectDto);
-            var account = _currentAccountService.Account;
+            var account = _currentAccountService.GetAccount();
             
             _dbContext.Projects.Add(project);
             await _dbContext.SaveChangesAsync(cancellationToken);

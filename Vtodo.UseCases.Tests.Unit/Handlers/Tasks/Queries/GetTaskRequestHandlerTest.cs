@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Vtodo.DataAccess.Postgres;
@@ -10,6 +11,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Dto;
 using Vtodo.UseCases.Handlers.Tasks.Queries.GetTask;
 using Xunit;
@@ -21,7 +24,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulGetTask_ReturnSystemTaskTaskDto()
+        public async void Handle_SuccessfulGetTask_ReturnSystemTaskTaskDto()
         {
             SetupDbContext();
             
@@ -39,9 +42,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
                 BoardId = testTask.Board.Id,
             });
             
-            var getTaskRequestHandler = new GetTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object, mapperMock.Object);
+            var getTaskRequestHandler = new GetTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                mapperMock.Object,
+                SetupMockMediatorService().Object);
 
-            var result = getTaskRequestHandler.Handle(request, CancellationToken.None).Result;
+            var result = await getTaskRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(result);
             
@@ -49,18 +56,38 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
         }
         
         [Fact]
-        public async void Handle_TaskNotFound_ThrowsTaskNotFoundException()
+        public async void Handle_TaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
             
             var request = new GetTaskRequest() { Id = 100 };
             var mapperMock = SetupMapperMock();
             
-            var getTaskRequestHandler = new GetTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object, mapperMock.Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
+            var getTaskRequestHandler = new GetTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object, 
+                mapperMock.Object,
+                mediatorMock.Object
+            );
 
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => getTaskRequestHandler.Handle(request, CancellationToken.None));
+            var result = await getTaskRequestHandler.Handle(request, CancellationToken.None);
+            
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+            Assert.Null(result);
             
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,9 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.InvalidOperation;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Commands.GrantRole;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Dto;
 using Xunit;
@@ -19,7 +23,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulGrantRole_ReturnsTask()
+        public async void Handle_SuccessfulGrantRole_ReturnsTask()
         {
             SetupDbContext();
 
@@ -27,9 +31,12 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
             
             var request = new GrantRoleRequest() { ProjectId = 1, GrantRoleDto = grantRoleDto};
 
-            var grantRoleRequestHandler = new GrantRoleRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var grantRoleRequestHandler = new GrantRoleRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                SetupMockMediatorService().Object);
             
-            grantRoleRequestHandler.Handle(request, CancellationToken.None);
+            await grantRoleRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(_dbContext.ProjectAccountsRoles.FirstOrDefault(x =>
                 x.ProjectId == request.ProjectId && 
@@ -40,7 +47,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
         }
 
         [Fact]
-        public async void Handle_AttemptAddMemberFromGrantRole_ThrowsAttemptAddMemberFromGrantRoleException()
+        public async void Handle_AttemptAddMemberFromGrantRole_SendAttemptAddMemberFromGrantRoleError()
         {
             SetupDbContext();
             
@@ -48,15 +55,25 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
             
             var request = new GrantRoleRequest() { ProjectId = 1, GrantRoleDto = grantRoleDto};
             
-            var grantRoleRequestHandler = new GrantRoleRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new AttemptAddMemberFromGrantRoleError();
+            
+            var grantRoleRequestHandler = new GrantRoleRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object
+            );
 
-            await Assert.ThrowsAsync<AttemptAddMemberFromGrantRoleException>(() => grantRoleRequestHandler.Handle(request, CancellationToken.None));
+            await grantRoleRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_ProjectNotFound_ThrowsProjectNotFoundException()
+        public async void Handle_ProjectNotFound_SendProjectNotFoundError()
         {
             SetupDbContext();
             
@@ -64,15 +81,25 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
             
             var request = new GrantRoleRequest() { ProjectId = 5, GrantRoleDto = grantRoleDto};
             
-            var grantRoleRequestHandler = new GrantRoleRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<ProjectNotFoundException>(() => grantRoleRequestHandler.Handle(request, CancellationToken.None));
+            var mediatorMock = SetupMockMediatorService();
+            var error = new ProjectNotFoundError();
+            
+            var grantRoleRequestHandler = new GrantRoleRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object
+            );
+            
+            await grantRoleRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
         }
 
         [Fact]
-        public async void Handle_AccountNotFound_ThrowsAccountNotFoundException()
+        public async void Handle_AccountNotFound_SendAccountNotFoundError()
         {
             SetupDbContext();
             
@@ -80,13 +107,30 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
             
             var request = new GrantRoleRequest() { ProjectId = 1, GrantRoleDto = grantRoleDto};
             
-            var grantRoleRequestHandler = new GrantRoleRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new AccountNotFoundError();
+            
+            var grantRoleRequestHandler = new GrantRoleRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object
+            );
 
-            await Assert.ThrowsAsync<AccountNotFoundException>(() => grantRoleRequestHandler.Handle(request, CancellationToken.None));
+            await grantRoleRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
         }
 
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
+        }
+        
         private Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()
         {
             var mock = new Mock<IProjectSecurityService>();

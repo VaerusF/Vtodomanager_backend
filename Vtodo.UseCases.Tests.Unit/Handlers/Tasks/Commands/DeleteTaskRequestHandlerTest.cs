@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using AutoMapper;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Commands.DeleteTask;
 using Xunit;
 
@@ -18,14 +21,17 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        private void Handle_SuccessfulDeleteTask_ReturnsSystemTask()
+        private async void Handle_SuccessfulDeleteTask_ReturnsSystemTask()
         {
             SetupDbContext();
 
             var request = new DeleteTaskRequest() {Id = 1};
 
-            var deleteTaskRequestHandler = new DeleteTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-            deleteTaskRequestHandler.Handle(request, CancellationToken.None);
+            var deleteTaskRequestHandler = new DeleteTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                SetupMockMediatorService().Object);
+            await deleteTaskRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == 1));
             
@@ -33,17 +39,33 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         }
         
         [Fact]
-        private async void Handle_TaskNotFound_ThrowsTaskNotFoundException()
+        private async void Handle_TaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
 
             var request = new DeleteTaskRequest() {Id = 50};
 
-            var deleteTaskRequestHandler = new DeleteTaskRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-           
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => deleteTaskRequestHandler.Handle(request, CancellationToken.None));
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
+            var deleteTaskRequestHandler = new DeleteTaskRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
+            
+            await deleteTaskRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
 
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

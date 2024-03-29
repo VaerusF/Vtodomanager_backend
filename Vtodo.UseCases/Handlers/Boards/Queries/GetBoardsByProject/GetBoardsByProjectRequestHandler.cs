@@ -10,31 +10,40 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Boards.Dto;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardsByProject
 {
-    internal class GetBoardsByProjectRequestHandler : IRequestHandler<GetBoardsByProjectRequest, List<BoardDto>>
+    internal class GetBoardsByProjectRequestHandler : IRequestHandler<GetBoardsByProjectRequest, List<BoardDto>?>
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
         
         public GetBoardsByProjectRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper)
+            IMapper mapper,
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _mapper = mapper;
+            _mediator = mediator;
         }
         
-        public async Task<List<BoardDto>> Handle(GetBoardsByProjectRequest request, CancellationToken cancellationToken)
+        public async Task<List<BoardDto>?> Handle(GetBoardsByProjectRequest request, CancellationToken cancellationToken)
         {
             var project = await _dbContext.Projects
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == request.ProjectId, cancellationToken: cancellationToken);
-            if (project == null) throw new ProjectNotFoundException();
+            if (project == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new ProjectNotFoundError() }, cancellationToken); 
+                return null;
+            }
             
             var boards = await _dbContext.Boards
                 .Include(x => x.Project)

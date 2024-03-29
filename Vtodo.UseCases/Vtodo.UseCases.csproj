@@ -23,11 +23,6 @@
 
     <ItemGroup>
       <Folder Include="Handlers\Accounts\Queries" />
-      <Folder Include="Handlers\Errors\Dto\AlreadyExists\" />
-      <Folder Include="Handlers\Errors\Dto\InvalidOperation\" />
-      <Folder Include="Handlers\Errors\Dto\NotFound\" />
-      <Folder Include="Handlers\Errors\Dto\Security\" />
-      <Folder Include="Handlers\Errors\Dto\Validation\" />
       <Folder Include="Handlers\ProjectsRoles\Mappings" />
       <Folder Include="Handlers\ProjectsRoles\Queries" />
     </ItemGroup>

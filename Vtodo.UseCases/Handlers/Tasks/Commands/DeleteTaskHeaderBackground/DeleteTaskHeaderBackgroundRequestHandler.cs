@@ -6,6 +6,8 @@ using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace Vtodo.UseCases.Handlers.Tasks.Commands.DeleteTaskHeaderBackground
 {
@@ -14,15 +16,18 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.DeleteTaskHeaderBackground
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IProjectsFilesService _projectFilesService;
+        private readonly IMediator _mediator;
 
         public DeleteTaskHeaderBackgroundRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IProjectsFilesService projectFilesService)
+            IProjectsFilesService projectFilesService,
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _projectFilesService = projectFilesService;
+            _mediator = mediator;
         }
         
         public async Task Handle(DeleteTaskHeaderBackgroundRequest request, CancellationToken cancellationToken)
@@ -32,7 +37,11 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.DeleteTaskHeaderBackground
                 .Include(t => t.Board.Project)
                 .Include(t => t.ParentTask)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
-            if (task == null) throw new TaskNotFoundException();
+            if (task == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new TaskNotFoundError() }, cancellationToken); 
+                return;
+            }
 
             _projectSecurityService.CheckAccess(task.Board.Project, ProjectRoles.ProjectUpdate);
 

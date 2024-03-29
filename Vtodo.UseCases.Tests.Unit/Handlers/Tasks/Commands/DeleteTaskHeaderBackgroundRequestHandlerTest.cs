@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Commands.DeleteTaskHeaderBackground;
 using Xunit;
 
@@ -18,7 +21,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulDeleteTaskHeaderBackground_ReturnsSystemTask()
+        public async void Handle_SuccessfulDeleteTaskHeaderBackground_ReturnsSystemTask()
         {
             SetupDbContext();
             
@@ -42,9 +45,10 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
 
             var deleteTaskHeaderBackgroundRequestHandler = new DeleteTaskHeaderBackgroundRequestHandler(_dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
-                mockProjectFileService.Object);
+                mockProjectFileService.Object, 
+                SetupMockMediatorService().Object);
 
-            deleteTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            await deleteTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.Null(_dbContext.ProjectTasksFiles.FirstOrDefault(x => x.TaskId == request.Id && x.FileName == oldPath));
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.Id && x.ImageHeaderPath != null));
@@ -53,12 +57,15 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         }
 
         [Fact]
-        public async void Handle_TaskNotFound_ThrowsTaskNotFoundException()
+        public async void Handle_TaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
             
             var request = new DeleteTaskHeaderBackgroundRequest() { Id = 2};
 
+            var mediatorMock = SetupMockMediatorService();
+            var error = new TaskNotFoundError();
+            
             var mockProjectFileService = SetupProjectFilesServiceMock();
             mockProjectFileService.Setup(x =>
                 x.DeleteProjectFile(It.IsAny<Project>(), It.IsAny<TaskM>(), It.IsAny<string>())).Verifiable();
@@ -66,11 +73,22 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var deleteTaskHeaderBackgroundRequestHandler = new DeleteTaskHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
-                mockProjectFileService.Object);
+                mockProjectFileService.Object,
+                mediatorMock.Object);
             
-            await Assert.ThrowsAsync<TaskNotFoundException>(() => deleteTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None));
-            
+            await deleteTaskHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

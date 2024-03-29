@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,9 @@ using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Commands.MoveBoardToAnotherProject;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.InvalidOperation;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
@@ -17,15 +21,18 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulMoveBoardToAnotherProject_ReturnsTask()
+        public async void Handle_SuccessfulMoveBoardToAnotherProject_ReturnsTask()
         {
             SetupDbContext();
 
             var request = new MoveBoardToAnotherProjectRequest() { BoardId = 1, ProjectId = 2};
             
-            var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(_dbContext, SetupProjectSecurityService().Object);
+            var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object,
+                SetupMockMediatorService().Object);
 
-            moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None);
+            await moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.Null(_dbContext.Boards.FirstOrDefault(x => x.Project == _dbContext.Projects.First(d => d.Id == 1)));
             Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Project == _dbContext.Projects.First(d => d.Id == 2)));
@@ -34,31 +41,59 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         }
 
         [Fact]
-        public async void Handle_BoardNotFound_ThrowsBoardNotFoundException()
+        public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
 
             var request = new MoveBoardToAnotherProjectRequest() { BoardId = 2, ProjectId = 2};
             
-            var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(_dbContext, SetupProjectSecurityService().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new BoardNotFoundError();
+            
+            var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object,
+                mediatorMock.Object
+            );
 
-            await Assert.ThrowsAsync<BoardNotFoundException>(() => moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None));
+            await moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
 
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_NewProjectIdEqualOldIdException_ThrowsNewProjectIdEqualOldIdException()
+        public async void Handle_NewProjectIdEqualOldIdException_SendNewProjectIdEqualOldIdError()
         {
             SetupDbContext();
 
             var request = new MoveBoardToAnotherProjectRequest() { BoardId = 1, ProjectId = 1};
             
-            var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(_dbContext, SetupProjectSecurityService().Object);
-
-            await Assert.ThrowsAsync<NewProjectIdEqualOldIdException>(() => moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None));
+            var mediatorMock = SetupMockMediatorService();
+            var error = new NewProjectIdEqualOldIdError();
+            
+            var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object,
+                mediatorMock.Object
+            );
+            
+            await moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None);
+            
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
 
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityService()

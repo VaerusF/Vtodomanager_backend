@@ -8,27 +8,32 @@ using Microsoft.EntityFrameworkCore;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Dto;
 
 namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTask
 {
-    internal class GetTaskRequestHandler : IRequestHandler<GetTaskRequest, TaskDto>
+    internal class GetTaskRequestHandler : IRequestHandler<GetTaskRequest, TaskDto?>
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
         
         public GetTaskRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper)
+            IMapper mapper, 
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _mapper = mapper;
+            _mediator = mediator;
         }
         
-        public async Task<TaskDto> Handle(GetTaskRequest request, CancellationToken cancellationToken)
+        public async Task<TaskDto?> Handle(GetTaskRequest request, CancellationToken cancellationToken)
         {
             var task = await _dbContext.Tasks
                 .Include(x => x.ParentTask)
@@ -37,8 +42,11 @@ namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTask
                 .Include(x => x.Board.Project)
                 .AsNoTracking()
                 .SingleOrDefaultAsync(p => p.Id == request.Id, cancellationToken: cancellationToken);
-
-            if (task == null) throw new TaskNotFoundException();
+            if (task == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new TaskNotFoundError() }, cancellationToken); 
+                return null;
+            }
 
             _projectSecurityService.CheckAccess(task.Board.Project, ProjectRoles.ProjectMember);
             

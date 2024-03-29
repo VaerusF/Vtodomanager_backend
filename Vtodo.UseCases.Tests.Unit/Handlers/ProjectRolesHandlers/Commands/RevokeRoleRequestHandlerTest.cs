@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Commands.RevokeRole;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Dto;
 using Xunit;
@@ -19,16 +22,19 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulRevokeRole_ReturnsTask()
+        public async void Handle_SuccessfulRevokeRole_ReturnsTask()
         {
             SetupDbContext();
 
             var revokeRoleDto = new RevokeRoleDto() { AccountId = 2, Role = ProjectRoles.ProjectUpdate };
             var request = new RevokeRoleRequest() { ProjectId = 1, RevokeRoleDto = revokeRoleDto };
 
-            var revokeRoleRequestHandler = new RevokeRoleRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var revokeRoleRequestHandler = new RevokeRoleRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                SetupMockMediatorService().Object);
 
-            revokeRoleRequestHandler.Handle(request, CancellationToken.None);
+            await revokeRoleRequestHandler.Handle(request, CancellationToken.None);
 
             Assert.Null(_dbContext.ProjectAccountsRoles.FirstOrDefault(x => 
                 x.Project.Id == request.ProjectId &&
@@ -38,33 +44,58 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
         }
 
         [Fact]
-        public async void Handle_ProjectNotFound_ThrowsProjectNotFoundException()
+        public async void Handle_ProjectNotFound_SendProjectNotFoundError()
         {
             SetupDbContext();
 
             var revokeRoleDto = new RevokeRoleDto() { AccountId = 2, Role = ProjectRoles.ProjectUpdate };
             var request = new RevokeRoleRequest() { ProjectId = 10, RevokeRoleDto = revokeRoleDto };
 
-            var revokeRoleRequestHandler = new RevokeRoleRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new ProjectNotFoundError();
+            
+            var revokeRoleRequestHandler = new RevokeRoleRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
 
-            await Assert.ThrowsAsync<ProjectNotFoundException>(() => revokeRoleRequestHandler.Handle(request, CancellationToken.None));
+            await revokeRoleRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_AccountNotFound_ThrowsAccountNotFoundException()
+        public async void Handle_AccountNotFound_SendAccountNotFoundError()
         {
             SetupDbContext();
 
             var revokeRoleDto = new RevokeRoleDto() { AccountId = 20, Role = ProjectRoles.ProjectUpdate };
             var request = new RevokeRoleRequest() { ProjectId = 1, RevokeRoleDto = revokeRoleDto };
 
-            var revokeRoleRequestHandler = new RevokeRoleRequestHandler(_dbContext, SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<AccountNotFoundException>(() => revokeRoleRequestHandler.Handle(request, CancellationToken.None));
+            var mediatorMock = SetupMockMediatorService();
+            var error = new AccountNotFoundError();
             
+            var revokeRoleRequestHandler = new RevokeRoleRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object);
+            
+            await revokeRoleRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private void SetupDbContext()

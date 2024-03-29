@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Exceptions;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Queries.GetBoardHeaderBackground;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
@@ -17,15 +20,28 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public async void Handle_BoardNotFound_BoardNotFoundException()
+        public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
 
             var request = new GetBoardHeaderBackgroundRequest() {Id = 2};
+            
+            var mediatorMock = SetupMockMediatorService();
+            var error = new BoardNotFoundError();
+            
+            var getBoardHeaderBackgroundRequestHandler = new GetBoardHeaderBackgroundRequestHandler(
+                _dbContext, 
+                SetupProjectFilesServiceMock().Object, 
+                mediatorMock.Object
+            );
 
-            var getBoardHeaderBackgroundRequestHandler = new GetBoardHeaderBackgroundRequestHandler(_dbContext, SetupProjectFilesServiceMock().Object);
-
-            await Assert.ThrowsAsync<BoardNotFoundException>(() => getBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None));
+            var result = await getBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
+            Assert.Null(result);
+            
             CleanUp();
         } 
 
@@ -34,6 +50,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
             var mock = new Mock<IProjectsFilesService>();
             mock.Setup(x => x.GetProjectFile(It.IsAny<Project>(), It.IsAny<Board>(), It.IsAny<string>()));
 
+            return mock;
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
             return mock;
         }
         

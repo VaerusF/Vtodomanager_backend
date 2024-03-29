@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -9,6 +10,8 @@ using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Commands.UpdateBoard;
 using Vtodo.UseCases.Handlers.Boards.Dto;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
@@ -18,7 +21,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulUpdateBoard_ReturnsTask()
+        public async void Handle_SuccessfulUpdateBoard_ReturnsTask()
         {
             SetupDbContext();
             var updateBoardDto = new UpdateBoardDto()
@@ -29,9 +32,12 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             var request = new UpdateBoardRequest() { Id = 1, UpdateBoardDto = updateBoardDto};
             
-            var updateBoardRequestHandler = new UpdateBoardRequestHandler(_dbContext, SetupProjectSecurityService().Object);
+            var updateBoardRequestHandler = new UpdateBoardRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object,
+                SetupMockMediatorService().Object);
             
-            updateBoardRequestHandler.Handle(request, CancellationToken.None);
+            await updateBoardRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.Null(_dbContext.Boards.FirstOrDefault( x => x.Id == request.Id && x.Title == "Test Board"));
             Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Id == request.Id && x.Title == updateBoardDto.Title && x.PrioritySort == updateBoardDto.PrioritySort));
@@ -40,7 +46,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         }
         
         [Fact]
-        public async void Handle_BoardNotFound_ThrowsBoardNotFoundException()
+        public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
             var updateBoardDto = new UpdateBoardDto()
@@ -51,9 +57,20 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             var request = new UpdateBoardRequest() { Id = 2, UpdateBoardDto = updateBoardDto};
             
-            var updateBoardRequestHandler = new UpdateBoardRequestHandler(_dbContext, SetupProjectSecurityService().Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new BoardNotFoundError();
             
-            await Assert.ThrowsAsync<BoardNotFoundException>(() => updateBoardRequestHandler.Handle(request, CancellationToken.None));
+            var updateBoardRequestHandler = new UpdateBoardRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object,
+                mediatorMock.Object
+            );
+            
+            await updateBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
 
             CleanUp();
         }
@@ -66,6 +83,12 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             return new Mock<IProjectSecurityService>();
         }
         
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
+        }
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();

@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using AutoMapper;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -8,6 +9,8 @@ using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Commands.AddMember;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Dto;
 using Xunit;
@@ -19,7 +22,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulAddMember_ReturnsTask()
+        public async void Handle_SuccessfulAddMember_ReturnsTask()
         {
             SetupDbContext();
 
@@ -27,21 +30,24 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
 
             var request = new AddMemberRequest() {ProjectId = 1, AddMemberDto = addMemberDto};
 
-            var addMemberRequestHandler = new AddMemberRequestHandler(_dbContext,
-                SetupProjectSecurityServiceMock().Object);
+            var addMemberRequestHandler = new AddMemberRequestHandler(
+                _dbContext,
+                SetupProjectSecurityServiceMock().Object,
+                SetupMockMediatorService().Object);
 
-            addMemberRequestHandler.Handle(request, CancellationToken.None);
+            await addMemberRequestHandler.Handle(request, CancellationToken.None);
 
             Assert.NotNull(_dbContext.ProjectAccountsRoles.FirstOrDefault(x =>
                 x.AccountId == addMemberDto.AccountId &&
                 x.ProjectId == request.ProjectId &&
-                x.ProjectRole == ProjectRoles.ProjectMember));
+                x.ProjectRole == ProjectRoles.ProjectMember
+            ));
 
             CleanUp();
         }
 
         [Fact]
-        public async void Handle_ProjectNotFound_ThrowsProjectNotFoundException()
+        public async void Handle_ProjectNotFound_SendProjectNotFoundError()
         {
             SetupDbContext();
 
@@ -49,16 +55,25 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
 
             var request = new AddMemberRequest() {ProjectId = 3, AddMemberDto = addMemberDto};
 
-            var addMemberRequestHandler = new AddMemberRequestHandler(_dbContext,
-                SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<ProjectNotFoundException>( () => addMemberRequestHandler.Handle(request, CancellationToken.None));
+            var mediatorMock = SetupMockMediatorService();
+            var error = new ProjectNotFoundError();
+            
+            var addMemberRequestHandler = new AddMemberRequestHandler(
+                _dbContext,
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object
+            );
+            
+            await addMemberRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
         }
 
         [Fact]
-        public async void Handle_AccountNotFound_ThrowsAccountNotFoundException()
+        public async void Handle_AccountNotFound_SendAccountNotFoundError()
         {
             SetupDbContext();
 
@@ -66,12 +81,29 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.ProjectRolesHandlers.Commands
 
             var request = new AddMemberRequest() {ProjectId = 1, AddMemberDto = addMemberDto};
 
-            var addMemberRequestHandler = new AddMemberRequestHandler(_dbContext,
-                SetupProjectSecurityServiceMock().Object);
-
-            await Assert.ThrowsAsync<AccountNotFoundException>( () => addMemberRequestHandler.Handle(request, CancellationToken.None));
+            var mediatorMock = SetupMockMediatorService();
+            var error = new AccountNotFoundError();
+            
+            var addMemberRequestHandler = new AddMemberRequestHandler(
+                _dbContext,
+                SetupProjectSecurityServiceMock().Object,
+                mediatorMock.Object
+            );
+            
+            await addMemberRequestHandler.Handle(request, CancellationToken.None);
+            
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

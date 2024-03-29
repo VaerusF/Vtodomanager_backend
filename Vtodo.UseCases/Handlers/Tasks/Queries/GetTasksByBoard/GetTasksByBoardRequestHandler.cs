@@ -10,33 +10,42 @@ using Microsoft.EntityFrameworkCore;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Dto;
 
 namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard
 {
-    internal class GetTasksByBoardRequestHandler : IRequestHandler<GetTasksByBoardRequest, List<TaskDto>>
+    internal class GetTasksByBoardRequestHandler : IRequestHandler<GetTasksByBoardRequest, List<TaskDto>?>
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
         
         public GetTasksByBoardRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper)
+            IMapper mapper,
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _mapper = mapper;
+            _mediator = mediator;
         }
         
-        public async Task<List<TaskDto>> Handle(GetTasksByBoardRequest request, CancellationToken cancellationToken)
+        public async Task<List<TaskDto>?> Handle(GetTasksByBoardRequest request, CancellationToken cancellationToken)
         {
             var board = await _dbContext.Boards
                 .Include(x => x.Project)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == request.BoardId, cancellationToken: cancellationToken);
-            if (board == null) throw new BoardNotFoundException();
+            if (board == null)
+            {
+                await _mediator.Send(new SendErrorToClientRequest() { Error = new BoardNotFoundError() }, cancellationToken); 
+                return null;
+            }
 
             var tasks = await _dbContext.Tasks
                 .Include(x => x.Board)

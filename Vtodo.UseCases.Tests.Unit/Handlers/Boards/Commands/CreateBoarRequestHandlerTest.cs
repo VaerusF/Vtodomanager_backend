@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using AutoMapper;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -10,6 +11,8 @@ using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Commands.CreateBoard;
 using Vtodo.UseCases.Handlers.Boards.Dto;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
@@ -19,7 +22,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulCreateBoard_ReturnsTask()
+        public async void Handle_SuccessfulCreateBoard_ReturnsTask()
         {
             SetupDbContext();
 
@@ -29,16 +32,20 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var mockMapper = SetupMockMapper();
             mockMapper.Setup(x => x.Map<Board>(createBoardDto)).Returns(new Board() {Title = createBoardDto.Title, PrioritySort = 0});
             
-            var createBoardRequestHandler = new CreateBoardRequestHandler(_dbContext, SetupProjectSecurityService().Object, mockMapper.Object);
+            var createBoardRequestHandler = new CreateBoardRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object, 
+                mockMapper.Object,
+                SetupMockMediatorService().Object);
             
-            createBoardRequestHandler.Handle(request, CancellationToken.None);
+            await createBoardRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Title == createBoardDto.Title));
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_ProjectNotFound_ThrowsProjectNotFoundException()
+        public async void Handle_ProjectNotFound_SendProjectNotFoundError()
         {
             SetupDbContext();
 
@@ -48,11 +55,30 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var mockMapper = SetupMockMapper();
             mockMapper.Setup(x => x.Map<Board>(createBoardDto)).Returns(new Board() {Title = createBoardDto.Title, PrioritySort = 0});
             
-            var createBoardRequestHandler = new CreateBoardRequestHandler(_dbContext, SetupProjectSecurityService().Object, mockMapper.Object);
+            var mediatorMock = SetupMockMediatorService();
+            var error = new ProjectNotFoundError();
             
-            await Assert.ThrowsAsync<ProjectNotFoundException>(() => createBoardRequestHandler.Handle(request, CancellationToken.None));
+            var createBoardRequestHandler = new CreateBoardRequestHandler(
+                _dbContext, 
+                SetupProjectSecurityService().Object, 
+                mockMapper.Object,
+                mediatorMock.Object
+            );
+            
+            await createBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
        
             CleanUp();
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
+            
+            return mock;
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityService()

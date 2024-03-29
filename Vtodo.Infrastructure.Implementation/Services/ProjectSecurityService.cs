@@ -21,7 +21,7 @@ namespace Vtodo.Infrastructure.Implementation.Services
 
         public void CheckAccess(Project project, ProjectRoles neededRole)
         {
-            var account = _currentAccountService.Account;
+            var account = _currentAccountService.GetAccount();
             var roles = _dbContext.ProjectAccountsRoles.Where(x => x.Project.Id == project.Id && x.Account.Id == account.Id).ToList();
 
             if (roles.Find(x => x.ProjectRole == ProjectRoles.ProjectOwner) != null) return;

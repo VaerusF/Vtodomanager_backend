@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
+using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -9,6 +10,8 @@ using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Commands.UploadBoardHeaderBackground;
+using Vtodo.UseCases.Handlers.Errors.Commands;
+using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
@@ -18,7 +21,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulUploadProjectFile_ReturnsTask()
+        public async void Handle_SuccessfulUploadProjectFile_ReturnsTask()
         {
             SetupDbContext();
 
@@ -27,9 +30,10 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var uploadBoardHeaderBackgroundRequestHandler = new UploadBoardHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
-                SetupProjectFilesServiceMock().Object);
+                SetupProjectFilesServiceMock().Object,
+                SetupMockMediatorService().Object);
 
-            uploadBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            await uploadBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
 
             Assert.NotNull(_dbContext.ProjectBoardsFiles.FirstOrDefault(x =>
                 x.BoardId == request.Id && x.FileName == request.FileName));
@@ -38,18 +42,26 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         }
         
         [Fact]
-        public async void Handle_BoardNotFound_ThrowsBoardNotFoundException()
+        public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
 
             var request = new UploadBoardHeaderBackgroundRequest() {Id = 2, BackgroundImage = new MemoryStream(), FileName = "test.png"};
             
+            var mediatorMock = SetupMockMediatorService();
+            var error = new BoardNotFoundError();
+            
             var uploadBoardHeaderBackgroundRequestHandler = new UploadBoardHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
-                SetupProjectFilesServiceMock().Object);
-
-            await Assert.ThrowsAsync<BoardNotFoundException>(() => uploadBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None));
+                SetupProjectFilesServiceMock().Object,
+                mediatorMock.Object
+            );
+            
+            await uploadBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
+                        y.Error.GetType() == error.GetType()), 
+                    It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
 
             CleanUp();
         }
@@ -58,6 +70,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         {
             var mock = new Mock<IProjectSecurityService>();
             mock.Setup(x => x.CheckAccess(It.IsAny<Project>(), It.IsAny<ProjectRoles>())).Verifiable();
+            
+            return mock;
+        }
+        
+        private static Mock<IMediator> SetupMockMediatorService()
+        {
+            var mock = new Mock<IMediator>();
             
             return mock;
         }
