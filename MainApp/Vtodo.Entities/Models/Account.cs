@@ -28,5 +28,7 @@ namespace Vtodo.Entities.Models
         public DateTime RegisteredAt { get; private set; } = DateTime.UtcNow;
 
         public bool IsBanned { get; set; }
+        
+        public bool IsVerified { get; set; }
     }
 }

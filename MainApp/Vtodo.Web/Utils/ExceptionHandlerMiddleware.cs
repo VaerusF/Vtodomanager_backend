@@ -32,7 +32,7 @@ namespace Vtodo.Web.Utils
                 if (!httpContext.Response.HasStarted)
                     await _mediator.Send(new SendErrorToClientRequest() { Error = new ClientError() { Code = e.Code, Message = e.Message} });
             }
-            catch (Exception e)
+            catch
             {
                 if (!httpContext.Response.HasStarted)
                     await _mediator.Send(new SendErrorToClientRequest() { Error = new ClientError() { Code = HttpStatusCode.InternalServerError, Message = "Internal server error"} });

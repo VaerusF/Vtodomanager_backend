@@ -18,7 +18,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
         private AppDbContext _dbContext = null!;
 
         [Fact]
-        public void Handle_SuccessfulGetAccountProjectsList_ReturnsTaskListProjectDto()
+        public async void Handle_SuccessfulGetAccountProjectsList_ReturnsTaskListProjectDto()
         {
             SetupDbContext();
 
@@ -42,7 +42,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
             var getAccountProjectsListRequestHandler = new GetAccountProjectsListRequestHandler(_dbContext, 
                 SetupProjectSecurityServiceMock().Object, currentAccountServiceMock.Object, mapperMock.Object);
 
-            var result = getAccountProjectsListRequestHandler.Handle(request, CancellationToken.None).Result;
+            var result = await getAccountProjectsListRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(result);
             Assert.Equal(2, result.Count);

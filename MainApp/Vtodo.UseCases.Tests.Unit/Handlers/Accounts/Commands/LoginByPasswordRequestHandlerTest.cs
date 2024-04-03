@@ -55,7 +55,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
         }
 
         [Fact]
-        public async void Handle_AccountNotFound_SendAccountNotFoundError()
+        public void Handle_AccountNotFound_SendAccountNotFoundError()
         {
             SetupDbContext();
             
@@ -117,11 +117,11 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
                 mediatorMock.Object
             );
             
-            var result = loginByPasswordRequestHandler.Handle(request, CancellationToken.None);
+            var result = await loginByPasswordRequestHandler.Handle(request, CancellationToken.None);
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
-            Assert.Null(result.Result);
+            Assert.Null(result);
             
             CleanUp();
         }

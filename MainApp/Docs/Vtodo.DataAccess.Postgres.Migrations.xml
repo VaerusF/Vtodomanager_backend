@@ -76,5 +76,17 @@
         <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddedTaskImageHeaderBackground.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddIsVerifiedToAccountModel">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddIsVerifiedToAccountModel.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddIsVerifiedToAccountModel.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddIsVerifiedToAccountModel.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
     </members>
 </doc>
