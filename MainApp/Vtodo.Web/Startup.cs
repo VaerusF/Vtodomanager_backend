@@ -150,7 +150,7 @@ namespace Vtodo.Web
             app.UseRouting();
             
             app.UseCors(x => x
-                .WithOrigins(Configuration.GetValue<string>("ClientAddress"))
+                .WithOrigins(Configuration.GetValue<string>("ClientAddress") ?? throw new Exception("ClientAddress is not defined in configuration"))
                 .AllowCredentials()
                 .AllowAnyMethod()
                 .AllowAnyHeader());

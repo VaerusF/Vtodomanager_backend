@@ -5,10 +5,10 @@ ENV ASPNETCORE_URLS=http://+:8080
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY ["Vtodo.Web/Vtodo.Web.csproj", "Vtodo.Web/"]
+COPY ["MainApp/Vtodo.Web/Vtodo.Web.csproj", "Vtodo.Web/"]
 RUN dotnet restore "Vtodo.Web/Vtodo.Web.csproj"
 COPY . .
-WORKDIR "/src/Vtodo.Web"
+WORKDIR "/src/MainApp/Vtodo.Web"
 RUN dotnet build "Vtodo.Web.csproj" -c Release -o /app/build
 
 FROM build AS publish

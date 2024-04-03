@@ -7,7 +7,7 @@ services:
     container_name: web-app
     build:
       context: .
-      dockerfile: ./Vtodo.Web/Dockerfile
+      dockerfile: ./MainApp/Vtodo.Web/Dockerfile
     ports:
       - "8080:8080"
     restart: on-failure
@@ -18,7 +18,7 @@ services:
     networks:
       - vtodo-dev
     volumes:
-      - ./Builds/appdata/:/VtodoData/
+      - ./MainApp/Builds/appdata/:/VtodoData/
   postgres_db:
     container_name: vtodo_postgres
     image: postgres:14
