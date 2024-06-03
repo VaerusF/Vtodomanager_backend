@@ -19,7 +19,7 @@ using Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard;
 
 namespace Vtodo.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class TasksController : ControllerBase
     {
