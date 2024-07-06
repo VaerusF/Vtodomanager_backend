@@ -349,42 +349,6 @@
             <response code="404">Task not found</response>
             <response code="404">Board not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.GetTaskHeaderBackground(System.Int32)">
-            <summary>
-            Get task header background image
-            </summary>
-            <param name="id">Task id</param>
-            <response code="200"></response>
-            <response code="400">Background image file not exists</response>
-            <response code="401">Unauthorized</response>
-            <response code="403">Access denied</response>
-            <response code="404">Task not found</response>
-            <response code="500">File not found</response>
-        </member>
-        <member name="M:Vtodo.Controllers.TasksController.UploadTaskHeaderBackground(System.Int32,Microsoft.AspNetCore.Http.IFormFile)">
-            <summary>
-            Upload task header background image
-            </summary>
-            <param name="id">Task id</param>
-            <param name="uploadTaskHeaderBackground">Image, one of the types: ".jpg", ".png"</param>
-            <response code="200"></response>
-            <response code="400">Invalid file</response>
-            <response code="401">Unauthorized</response>
-            <response code="403">Access denied</response>
-            <response code="404">Task not found</response>
-        </member>
-        <member name="M:Vtodo.Controllers.TasksController.DeleteTaskHeaderBackground(System.Int32)">
-            <summary>
-            Delete task header background image
-            </summary>
-            <param name="id">Task id</param>
-            <response code="200"></response>
-            <response code="400">Background image file not exists</response>
-            <response code="401">Unauthorized</response>
-            <response code="403">Access denied</response>
-            <response code="404">Task not found</response>
-            <response code="500">File not found</response>
-        </member>
         <member name="M:Vtodo.Controllers.TasksController.Delete(System.Int32)">
             <summary>
             Delete task

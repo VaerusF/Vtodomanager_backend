@@ -6,15 +6,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Vtodo.UseCases.Handlers.Tasks.Commands.CreateTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.DeleteTask;
-using Vtodo.UseCases.Handlers.Tasks.Commands.DeleteTaskHeaderBackground;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToRoot;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask;
-using Vtodo.UseCases.Handlers.Tasks.Commands.UploadTaskHeaderBackground;
 using Vtodo.UseCases.Handlers.Tasks.Dto;
 using Vtodo.UseCases.Handlers.Tasks.Queries.GetTask;
-using Vtodo.UseCases.Handlers.Tasks.Queries.GetTaskHeaderBackground;
 using Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard;
 
 namespace Vtodo.Controllers
@@ -135,57 +132,6 @@ namespace Vtodo.Controllers
         public async Task MoveToBoard(int id, int boardId)
         {
             await _mediator.Send(new MoveTaskToAnotherBoardRequest() { TaskId = id, NewBoardId = boardId});
-        }
-        
-        
-        /// <summary>
-        /// Get task header background image
-        /// </summary>
-        /// <param name="id">Task id</param>
-        /// <response code="200"></response>
-        /// <response code="400">Background image file not exists</response>
-        /// <response code="401">Unauthorized</response>
-        /// <response code="403">Access denied</response>
-        /// <response code="404">Task not found</response>
-        /// <response code="500">File not found</response>
-        [HttpGet("{id:int}/header_background")]
-        public async Task<ActionResult<FileStream?>> GetTaskHeaderBackground(int id)
-        {
-            var file = await _mediator.Send(new GetTaskHeaderBackgroundRequest() {Id = id});
-            
-            return file == null ? Ok() : File(file, "application/octet-stream", Path.GetFileName(file.Name));
-        }
-        
-        /// <summary>
-        /// Upload task header background image
-        /// </summary>
-        /// <param name="id">Task id</param>
-        /// <param name="uploadTaskHeaderBackground">Image, one of the types: ".jpg", ".png"</param>
-        /// <response code="200"></response>
-        /// <response code="400">Invalid file</response>
-        /// <response code="401">Unauthorized</response>
-        /// <response code="403">Access denied</response>
-        /// <response code="404">Task not found</response>
-        [HttpPut("{id:int}/header_background")]
-        public async Task UploadTaskHeaderBackground(int id, IFormFile uploadTaskHeaderBackground)
-        {
-            await _mediator.Send(new UploadTaskHeaderBackgroundRequest () { Id = id, BackgroundImage = uploadTaskHeaderBackground.OpenReadStream(), FileName = uploadTaskHeaderBackground.FileName });
-        }
-        
-        /// <summary>
-        /// Delete task header background image
-        /// </summary>
-        /// <param name="id">Task id</param>
-        /// <response code="200"></response>
-        /// <response code="400">Background image file not exists</response>
-        /// <response code="401">Unauthorized</response>
-        /// <response code="403">Access denied</response>
-        /// <response code="404">Task not found</response>
-        /// <response code="500">File not found</response>
-        [HttpPut("{id:int}/delete_header_background")]
-        public async Task DeleteTaskHeaderBackground(int id)
-        {
-            await _mediator.Send(new DeleteTaskHeaderBackgroundRequest () { Id = id});
         }
 
         /// <summary>
