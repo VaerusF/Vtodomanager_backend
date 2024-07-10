@@ -8,7 +8,6 @@ using Vtodo.Controllers;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.DomainServices.Implementation;
 using Vtodo.DomainServices.Interfaces;
-using Vtodo.Infrastructure.Implementation;
 using Vtodo.Infrastructure.Implementation.Options;
 using Vtodo.Infrastructure.Implementation.Services;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
@@ -80,6 +79,7 @@ namespace Vtodo.Web
             );
 
             services.AddScoped<ISecurityService, SecurityService>();
+            services.AddScoped<ITaskService, TaskService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IConfigService, ConfigService>();
             services.AddScoped<IProjectSecurityService, ProjectSecurityService>();

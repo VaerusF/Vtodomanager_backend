@@ -1,12 +1,8 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
@@ -19,15 +15,18 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
+        private readonly ITaskService _taskService;
         private readonly IMediator _mediator;
 
         public MoveTaskToAnotherBoardRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
+            ITaskService taskService,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
+            _taskService = taskService;
             _mediator = mediator;
         }
         
@@ -62,8 +61,8 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new NewBoardIdEqualOldIdError() }, cancellationToken); 
                 return;
             }
-
-            rootTask.ParentTask = null;
+            
+            _taskService.MoveTaskToRoot(rootTask);
 
             var tasksList = new List<TaskM> {rootTask};
 
@@ -81,11 +80,8 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard
                     .ToListAsync(cancellationToken: cancellationToken);
             }
 
-            foreach (var task in tasksList)
-            {
-                task.Board = newBoard;
-            }
-
+            _taskService.MoveAllTaskFromListToAnotherBoard(tasksList, newBoard);
+            
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
         

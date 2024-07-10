@@ -1,11 +1,8 @@
-using System.Linq;
-using System.Threading;
-using AutoMapper;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -25,14 +22,37 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         public async void Handle_SuccessfulMoveTaskToAnotherBoard_ReturnsSystemTask()
         {
             SetupDbContext();
-
+            
             var request = new MoveTaskToAnotherBoardRequest() { TaskId = 1, NewBoardId = 2};
+            var newBoard = _dbContext.Boards.First(x => x.Id == request.NewBoardId); 
+            
+            var mockTaskService = SetupMockTaskService();
+            mockTaskService
+                .Setup(x => x.MoveAllTaskFromListToAnotherBoard(It.IsAny<List<TaskM>>(), 
+                    It.IsAny<Board>())
+            )
+                .Callback((List<TaskM> tasksList, Board newBoard ) =>
+                {
+                    foreach (var task in tasksList)
+                    {
+                        task.Board = newBoard;
+                    }
+                }
+            );
+            
             var moveTaskToAnotherBoardRequestHandler = new MoveTaskToAnotherBoardRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
-                SetupMockMediatorService().Object);
+                mockTaskService.Object,
+                SetupMockMediatorService().Object
+            );
 
             await moveTaskToAnotherBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            mockTaskService.Verify(x => x.MoveAllTaskFromListToAnotherBoard(
+                It.IsAny<List<TaskM>>(), 
+                It.IsAny<Board>()), Times.Once
+            );
             
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.TaskId && x.Board.Id == 1));
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.TaskId && x.Board.Id == 2));
@@ -56,6 +76,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToAnotherBoardRequestHandler = new MoveTaskToAnotherBoardRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                SetupMockTaskService().Object,
                 mediatorMock.Object
             );
 
@@ -80,6 +101,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToAnotherBoardRequestHandler = new MoveTaskToAnotherBoardRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                SetupMockTaskService().Object,
                 mediatorMock.Object
             );
 
@@ -104,6 +126,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToAnotherBoardRequestHandler = new MoveTaskToAnotherBoardRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                SetupMockTaskService().Object,
                 mediatorMock.Object
             );
             
@@ -130,6 +153,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             return mock;
         }
 
+        private static Mock<ITaskService> SetupMockTaskService()
+        {
+            var mock = new Mock<ITaskService>();
+            
+            return mock;
+        }
+        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();

@@ -3,6 +3,7 @@ using System.Threading;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
@@ -23,15 +24,26 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         public async void Handle_SuccessfulMoveTaskToRoot_ReturnsSystemTask()
         {
             SetupDbContext();
-
+            
+            var mockTaskService = SetupMockTaskService();
+            mockTaskService
+                .Setup(x => x.MoveTaskToRoot(It.IsAny<TaskM>()))
+                .Callback((TaskM task) =>
+                {
+                    task.ParentTask = null;
+                });
+            
             var request = new MoveTaskToRootRequest() { Id = 2 };
 
             var moveTaskToRootRequestHandler = new MoveTaskToRootRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                mockTaskService.Object,
                 SetupMockMediatorService().Object);
 
             await moveTaskToRootRequestHandler.Handle(request, CancellationToken.None);
+            
+            mockTaskService.Verify(x => x.MoveTaskToRoot(It.IsAny<TaskM>()), Times.Once);
             
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.Id && x.ParentTask != null));
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.Id && x.ParentTask == null));
@@ -52,6 +64,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToRootRequestHandler = new MoveTaskToRootRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                SetupMockTaskService().Object,
                 mediatorMock.Object);
 
             await moveTaskToRootRequestHandler.Handle(request, CancellationToken.None);
@@ -73,6 +86,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         {
             var mock = new Mock<IProjectSecurityService>();
             mock.Setup(x => x.CheckAccess(It.IsAny<Project>(), It.IsAny<ProjectRoles>())).Verifiable();
+            
+            return mock;
+        }
+        
+        private static Mock<ITaskService> SetupMockTaskService()
+        {
+            var mock = new Mock<ITaskService>();
             
             return mock;
         }

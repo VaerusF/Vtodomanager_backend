@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
@@ -16,15 +17,18 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
+        private readonly ITaskService _taskService;
         private readonly IMediator _mediator;
 
         public MoveTaskToAnotherTaskRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
+            ITaskService taskService,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
+            _taskService = taskService;
             _mediator = mediator;
         }
         
@@ -73,8 +77,8 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new AnotherBoardError() }, cancellationToken); 
                 return;
             }
-            
-            task.ParentTask = newParentTask;
+
+            _taskService.MoveTaskToAnotherTask(task, newParentTask);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
         }

@@ -1,10 +1,8 @@
-using System.Linq;
-using System.Threading;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -24,14 +22,27 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         public async void Handle_SuccessfulMoveTaskToAnotherTask_ReturnsSystemTask()
         {
             SetupDbContext();
-
+            
+            var mockTaskService = SetupMockTaskService();
+            mockTaskService.Setup(x => x.MoveTaskToAnotherTask(It.IsAny<TaskM>(), 
+                It.IsAny<TaskM>())
+            ).Callback((TaskM task, TaskM newParentTask) =>
+            {
+                task.ParentTask = newParentTask;
+            });
+            
             var request = new MoveTaskToAnotherTaskRequest() { TaskId = 1, NewParentTaskId = 2};
+            
             var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
-                SetupMockMediatorService().Object);
+                mockTaskService.Object,
+                SetupMockMediatorService().Object
+            );
 
             await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
+            
+            mockTaskService.Verify(x => x.MoveTaskToAnotherTask(It.IsAny<TaskM>(), It.IsAny<TaskM>()), Times.Once);
             
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.TaskId && x.ParentTask == null));
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == request.TaskId && x.ParentTask != null && x.ParentTask.Id == request.NewParentTaskId));
@@ -52,6 +63,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
+                SetupMockTaskService().Object,
                 mediatorMock.Object);
 
             await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
@@ -75,6 +87,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                SetupMockTaskService().Object,
                 mediatorMock.Object
             );
 
@@ -99,6 +112,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                SetupMockTaskService().Object,
                 mediatorMock.Object);
 
             await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
@@ -122,6 +136,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                SetupMockTaskService().Object,
                 mediatorMock.Object);
 
             await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
@@ -145,6 +160,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var moveTaskToAnotherTaskRequestHandler = new MoveTaskToAnotherTaskRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                SetupMockTaskService().Object,
                 mediatorMock.Object);
             
             await moveTaskToAnotherTaskRequestHandler.Handle(request, CancellationToken.None);
@@ -170,6 +186,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             return mock;
         }
 
+        private static Mock<ITaskService> SetupMockTaskService()
+        {
+            var mock = new Mock<ITaskService>();
+            
+            return mock;
+        }
+        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();

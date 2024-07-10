@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
@@ -15,15 +16,18 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToRoot
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
+        private readonly ITaskService _taskService;
         private readonly IMediator _mediator;
 
         public MoveTaskToRootRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
+            ITaskService taskService,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
+            _taskService = taskService;
             _mediator = mediator;
         }
         
@@ -41,7 +45,7 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToRoot
             }
             
             _projectSecurityService.CheckAccess(task.Board.Project, ProjectRoles.ProjectUpdate);
-            task.ParentTask = null;
+            _taskService.MoveTaskToRoot(task);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
         }

@@ -1,10 +1,8 @@
-using System.Linq;
-using System.Threading;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -35,15 +33,51 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 PrioritySort = 1
             };
             
+            var mockTaskService = SetupMockTaskService();
+            mockTaskService.Setup(x => x.UpdateTask(
+                It.IsAny<TaskM>(),  
+                It.IsAny<string>(),  
+                It.IsAny<string>(), 
+                It.IsAny<bool>(), 
+                It.IsAny<int?>(),
+                It.IsAny<TaskPriority>())
+            ).Callback((TaskM task, string title, string description, bool isCompleted, int? endDateTimeStamp,
+                TaskPriority priority) =>
+            {
+                task.Title = title;
+                task.Description = description;
+                task.IsCompleted = isCompleted;
+                if (endDateTimeStamp == null)
+                {
+                    task.EndDate = null;
+                }
+                else
+                {
+                    task.EndDate = DateTimeOffset.FromUnixTimeSeconds((int) endDateTimeStamp).DateTime;
+                }
+
+                task.Priority = priority;
+            });
+            
             var request = new UpdateTaskRequest() { Id = 1, UpdateTaskDto = updateTaskDto };
             
             var updateTaskRequestHandler = new UpdateTaskRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object,
+                mockTaskService.Object,
                 SetupMockMediatorService().Object);
 
             await updateTaskRequestHandler.Handle(request, CancellationToken.None);
 
+            mockTaskService.Verify(x => x.UpdateTask(
+                It.IsAny<TaskM>(),  
+                It.IsAny<string>(),  
+                It.IsAny<string>(), 
+                It.IsAny<bool>(), 
+                It.IsAny<int?>(),
+                It.IsAny<TaskPriority>()), Times.Once
+            );
+            
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == 1 &&
                  x.Title == "Test update task" && 
                  x.Description == "Test update task" &&
@@ -54,10 +88,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                  x.Title == updateTaskDto.Title && 
                  x.Description == updateTaskDto.Description &&
                  x.Priority == updateTaskDto.Priority &&
-                 x.PrioritySort == updateTaskDto.PrioritySort &&
                  x.IsCompleted == updateTaskDto.IsCompleted &&
                  x.EndDate != null));
-             
+            
             CleanUp();
         }
         
@@ -84,6 +117,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             var updateTaskRequestHandler = new UpdateTaskRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
+                SetupMockTaskService().Object,
                 mediatorMock.Object);
             
             await updateTaskRequestHandler.Handle(request, CancellationToken.None);
@@ -97,6 +131,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         private static Mock<IMediator> SetupMockMediatorService()
         {
             var mock = new Mock<IMediator>();
+            
+            return mock;
+        }
+        
+        private static Mock<ITaskService> SetupMockTaskService()
+        {
+            var mock = new Mock<ITaskService>();
             
             return mock;
         }

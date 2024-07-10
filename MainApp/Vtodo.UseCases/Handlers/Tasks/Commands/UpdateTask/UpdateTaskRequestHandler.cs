@@ -1,14 +1,8 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;
-using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
@@ -19,15 +13,18 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
+        private readonly ITaskService _taskService;
         private readonly IMediator _mediator;
         
         public UpdateTaskRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
+            ITaskService taskService,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
+            _taskService = taskService;
             _mediator = mediator;
         }
         
@@ -47,20 +44,8 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
 
             _projectSecurityService.CheckAccess(task.Board.Project, ProjectRoles.ProjectUpdate);
             
-            task.Title = updateBoardDto.Title;
-            task.Description = updateBoardDto.Description;
-            task.IsCompleted = updateBoardDto.IsCompleted;
-            if (updateBoardDto.EndDateTimeStamp == null)
-            {
-                task.EndDate = null;
-            }
-            else
-            {
-                task.EndDate = DateTimeOffset.FromUnixTimeSeconds((int) updateBoardDto.EndDateTimeStamp).DateTime;
-            }
-
-            task.Priority = updateBoardDto.Priority;
-            task.PrioritySort = updateBoardDto.PrioritySort;
+            _taskService.UpdateTask(task, updateBoardDto.Title, updateBoardDto.Description, 
+                updateBoardDto.IsCompleted, updateBoardDto.EndDateTimeStamp, updateBoardDto.Priority);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
 
