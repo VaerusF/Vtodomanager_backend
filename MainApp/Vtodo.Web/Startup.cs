@@ -79,6 +79,7 @@ namespace Vtodo.Web
             );
 
             services.AddScoped<ISecurityService, SecurityService>();
+            services.AddScoped<IProjectService, ProjectService>();
             services.AddScoped<IBoardService, BoardService>();
             services.AddScoped<ITaskService, TaskService>();
             services.AddScoped<IJwtService, JwtService>();

@@ -1,9 +1,7 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
@@ -14,20 +12,25 @@ namespace Vtodo.UseCases.Handlers.Projects.Commands.UpdateProject
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
+        private readonly IProjectService _projectService;
         private readonly IMediator _mediator;
         
         public UpdateProjectRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
+            IProjectService projectService,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
+            _projectService = projectService;
             _mediator = mediator;
         }
         
         public async Task Handle(UpdateProjectRequest request, CancellationToken cancellationToken)
         {
+            var updateDto = request.UpdateProjectDto;
+            
             var project = await _dbContext.Projects.FindAsync(request.Id, cancellationToken);
 
             if (project == null)
@@ -38,11 +41,9 @@ namespace Vtodo.UseCases.Handlers.Projects.Commands.UpdateProject
 
             _projectSecurityService.CheckAccess(project, ProjectRoles.ProjectUpdate);
             
-            var updateDto = request.UpdateProjectDto;
-            project.Title = updateDto.Title;
+            _projectService.UpdateProject(project, updateDto.Title);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
-
         }
     }
 }

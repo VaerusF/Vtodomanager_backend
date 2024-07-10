@@ -1,10 +1,8 @@
-using System.Linq;
-using System.Threading;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -25,6 +23,14 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         {
             SetupDbContext();
 
+            var mockProjectService = SetupMockProjectService();
+            mockProjectService.Setup(x => x.UpdateProject(It.IsAny<Project>(), It.IsAny<string>()))
+                .Callback((Project project, string title) =>
+                    {
+                        project.Title = title;
+                    }
+            );
+            
             var updateProjectDto = new UpdateProjectDto() { Title = "Test update project"};
             
             var request = new UpdateProjectRequest() { Id = 1, UpdateProjectDto = updateProjectDto};
@@ -32,10 +38,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             var updateProjectRequestHandler = new UpdateProjectRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
+                mockProjectService.Object,
                 SetupMockMediatorService().Object
             );
 
             await updateProjectRequestHandler.Handle(request, CancellationToken.None);
+            
+            mockProjectService.Verify(x => x.UpdateProject(It.IsAny<Project>(), It.IsAny<string>()), Times.Once);
             
             Assert.NotNull(_dbContext.Projects.FirstOrDefault(x => x.Id == request.Id && x.Title == updateProjectDto.Title));
             
@@ -57,6 +66,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             var updateProjectRequestHandler = new UpdateProjectRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
+                SetupMockProjectService().Object,
                 mediatorMock.Object
             );
 
@@ -79,6 +89,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         {
             var mock = new Mock<IProjectSecurityService>();
             mock.Setup(x => x.CheckAccess(It.IsAny<Project>(), It.IsAny<ProjectRoles>())).Verifiable();
+            
+            return mock;
+        }
+        
+        private static Mock<IProjectService> SetupMockProjectService()
+        {
+            var mock = new Mock<IProjectService>();
             
             return mock;
         }
