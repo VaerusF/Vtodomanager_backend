@@ -18,7 +18,7 @@
 * Склонировать репозиторий `git clone https://github.com/TVSergey/VTodoManager_Backend_AspNetCore.git`;
 * Перейти в корневой каталог репозитория;
 * Запустить проект, выполнив `docker-compose up --build`;
-* Перейти на `http://localhost:8080/`.
+* Перейти на `http://127.0.0.1:8080/`.
 
 Для доступа к основным функциям API необходимо создать аккаунт с помощью метода POST `/api/v1/accounts`, например:
     `{
