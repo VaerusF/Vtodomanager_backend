@@ -1,5 +1,6 @@
 using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
+using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 
 namespace Vtodo.DomainServices.Implementation;
@@ -31,11 +32,16 @@ internal class TaskService : ITaskService
 
     public void MoveTaskToAnotherTask(TaskM task, TaskM newParentTask)
     {
+        if (task.Id == newParentTask.Id) throw new TaskIdEqualNewParentTaskIdException();
+        if (task.ParentTask != null && task.ParentTask.Id == newParentTask.Id) throw new NewParentTaskIdEqualOldIdException();
+        
         task.ParentTask = newParentTask;
     }
 
     public void MoveAllTaskFromListToAnotherBoard(List<TaskM> tasksList, Board newBoard)
     {
+        if (tasksList.Count > 0 && tasksList.First().Board.Id == newBoard.Id) throw new NewBoardIdEqualOldIdException();
+
         foreach (var task in tasksList)
         {
             task.Board = newBoard;
