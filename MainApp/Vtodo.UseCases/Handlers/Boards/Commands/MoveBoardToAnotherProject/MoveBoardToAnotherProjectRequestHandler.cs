@@ -1,10 +1,8 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.InvalidOperation;
@@ -16,15 +14,18 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.MoveBoardToAnotherProject
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
+        private readonly IBoardService _boardService;
         private readonly IMediator _mediator;
 
         public MoveBoardToAnotherProjectRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
+            IBoardService boardService,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
+            _boardService = boardService;
             _mediator = mediator;
         }
         
@@ -47,7 +48,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.MoveBoardToAnotherProject
                 return;
             }
 
-            if (newProject.Id == board.Project.Id)
+            if (board.Project.Id == newProject.Id)
             {
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new NewProjectIdEqualOldIdError() }, cancellationToken); 
                 return;
@@ -55,7 +56,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.MoveBoardToAnotherProject
             
             _projectSecurityService.CheckAccess(newProject, ProjectRoles.ProjectUpdate);
             
-            board.Project = newProject;
+            _boardService.MoveBoardToAnotherProject(board, newProject);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
         }

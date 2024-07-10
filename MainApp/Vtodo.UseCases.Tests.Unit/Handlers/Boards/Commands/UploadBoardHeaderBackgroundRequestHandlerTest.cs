@@ -1,11 +1,8 @@
-using System.IO;
-using System.Linq;
-using System.Threading;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -24,17 +21,31 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         public async void Handle_SuccessfulUploadProjectFile_ReturnsTask()
         {
             SetupDbContext();
-
+            
+            var mockBoardService = SetupMockBoardService();
+            mockBoardService.Setup(x => x.UpdateImageHeaderPath(It.IsAny<Board>(), It.IsAny<string?>()))
+                .Callback((Board board, string? savedFileName) =>
+                    {
+                        board.ImageHeaderPath = savedFileName;
+                    }
+            );
+            
             var request = new UploadBoardHeaderBackgroundRequest() {Id = 1, BackgroundImage = new MemoryStream(), FileName = "test.png"};
             
             var uploadBoardHeaderBackgroundRequestHandler = new UploadBoardHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
                 SetupProjectFilesServiceMock().Object,
-                SetupMockMediatorService().Object);
+                mockBoardService.Object,
+                SetupMockMediatorService().Object
+            );
 
             await uploadBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
 
+            mockBoardService.Verify(x => x.UpdateImageHeaderPath(It.IsAny<Board>(), 
+                It.IsAny<string?>()), Times.Once
+            );
+            
             Assert.NotNull(_dbContext.ProjectBoardsFiles.FirstOrDefault(x =>
                 x.BoardId == request.Id && x.FileName == request.FileName));
 
@@ -55,6 +66,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
                 SetupProjectFilesServiceMock().Object,
+                SetupMockBoardService().Object,
                 mediatorMock.Object
             );
             
@@ -70,6 +82,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         {
             var mock = new Mock<IProjectSecurityService>();
             mock.Setup(x => x.CheckAccess(It.IsAny<Project>(), It.IsAny<ProjectRoles>())).Verifiable();
+            
+            return mock;
+        }
+        
+        private static Mock<IBoardService> SetupMockBoardService()
+        {
+            var mock = new Mock<IBoardService>();
             
             return mock;
         }

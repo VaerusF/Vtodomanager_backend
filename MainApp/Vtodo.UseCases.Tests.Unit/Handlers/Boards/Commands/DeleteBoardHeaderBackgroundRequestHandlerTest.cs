@@ -1,10 +1,8 @@
-using System.Linq;
-using System.Threading;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -24,6 +22,14 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         {
             SetupDbContext();
 
+            var mockBoardService = SetupMockBoardService();
+            mockBoardService.Setup(x => x.UpdateImageHeaderPath(It.IsAny<Board>(), It.IsAny<string?>()))
+                .Callback((Board board, string? savedFileName) =>
+                    {
+                        board.ImageHeaderPath = savedFileName;
+                    }
+                );
+            
             var request = new DeleteBoardHeaderBackgroundRequest() { Id = 1};
 
             var oldPath = "";
@@ -46,9 +52,15 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
                 mockProjectFileService.Object,
-                SetupMockMediatorService().Object);
+                mockBoardService.Object,
+                SetupMockMediatorService().Object
+            );
             
             await deleteBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            
+            mockBoardService.Verify(x => x.UpdateImageHeaderPath(It.IsAny<Board>(), 
+                    It.IsAny<string?>()), Times.Once
+            );
             
             Assert.Null(_dbContext.ProjectBoardsFiles.FirstOrDefault(x => x.BoardId == request.Id && x.FileName == oldPath));
             Assert.Null(_dbContext.Boards.FirstOrDefault(x => x.Id == request.Id && x.ImageHeaderPath != null));
@@ -74,6 +86,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
                 mockProjectFileService.Object,
+                SetupMockBoardService().Object, 
                 mediatorMock.Object);
             
             await deleteBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
@@ -88,6 +101,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         private static Mock<IMediator> SetupMockMediatorService()
         {
             var mock = new Mock<IMediator>();
+            
+            return mock;
+        }
+        
+        private static Mock<IBoardService> SetupMockBoardService()
+        {
+            var mock = new Mock<IBoardService>();
             
             return mock;
         }

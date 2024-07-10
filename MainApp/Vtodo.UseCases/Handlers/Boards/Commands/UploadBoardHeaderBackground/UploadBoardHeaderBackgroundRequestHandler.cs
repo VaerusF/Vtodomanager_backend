@@ -1,16 +1,11 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
-using Vtodo.UseCases.Handlers.Projects.Dto;
 
 namespace Vtodo.UseCases.Handlers.Boards.Commands.UploadBoardHeaderBackground
 {
@@ -19,17 +14,20 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.UploadBoardHeaderBackground
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IProjectsFilesService _projectFilesService;
+        private readonly IBoardService _boardService;
         private readonly IMediator _mediator;
         
         public UploadBoardHeaderBackgroundRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
             IProjectsFilesService projectFilesService,
+            IBoardService boardService,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _projectFilesService = projectFilesService;
+            _boardService = boardService;
             _mediator = mediator;
         }
         
@@ -54,7 +52,8 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.UploadBoardHeaderBackground
             var extension = _projectFilesService.CheckFile(streamFile, fileName, new string[] {".jpg", ".png"});
 
             var savedFileName = _projectFilesService.UploadProjectFile(board.Project, board, streamFile, extension);
-            board.ImageHeaderPath = savedFileName;
+            
+            _boardService.UpdateImageHeaderPath(board, savedFileName);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
         }

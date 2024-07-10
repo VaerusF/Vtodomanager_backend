@@ -1,10 +1,8 @@
-using System.Linq;
-using System.Threading;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -24,6 +22,21 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         public async void Handle_SuccessfulUpdateBoard_ReturnsTask()
         {
             SetupDbContext();
+            
+            var mockBoardService = SetupMockBoardService();
+            mockBoardService.Setup(x => x.UpdateBoard(It.IsAny<Board>(), It.IsAny<string>()))
+                .Callback((Board board, string title) =>
+                    {
+                        board.Title = title;
+                    }
+                );
+            mockBoardService.Setup(x => x.UpdateBoardPrioritySort(It.IsAny<Board>(), It.IsAny<int>()))
+                .Callback((Board board, int prioritySort) =>
+                    {
+                        board.PrioritySort = prioritySort;
+                    }
+                );
+            
             var updateBoardDto = new UpdateBoardDto()
             {
                 Title = "Updated Text Board",
@@ -35,9 +48,14 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var updateBoardRequestHandler = new UpdateBoardRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityService().Object,
-                SetupMockMediatorService().Object);
+                mockBoardService.Object,
+                SetupMockMediatorService().Object
+            );
             
             await updateBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            mockBoardService.Verify(x => x.UpdateBoard(It.IsAny<Board>(), It.IsAny<string>()), Times.Once);
+            mockBoardService.Verify(x => x.UpdateBoardPrioritySort(It.IsAny<Board>(), It.IsAny<int>()), Times.Once);
             
             Assert.Null(_dbContext.Boards.FirstOrDefault( x => x.Id == request.Id && x.Title == "Test Board"));
             Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Id == request.Id && x.Title == updateBoardDto.Title && x.PrioritySort == updateBoardDto.PrioritySort));
@@ -63,6 +81,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var updateBoardRequestHandler = new UpdateBoardRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityService().Object,
+                SetupMockBoardService().Object,
                 mediatorMock.Object
             );
             
@@ -83,12 +102,20 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             return new Mock<IProjectSecurityService>();
         }
         
+        private static Mock<IBoardService> SetupMockBoardService()
+        {
+            var mock = new Mock<IBoardService>();
+            
+            return mock;
+        }
+        
         private static Mock<IMediator> SetupMockMediatorService()
         {
             var mock = new Mock<IMediator>();
             
             return mock;
         }
+        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();

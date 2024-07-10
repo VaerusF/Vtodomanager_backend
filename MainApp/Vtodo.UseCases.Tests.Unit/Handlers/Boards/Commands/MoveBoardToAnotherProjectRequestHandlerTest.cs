@@ -1,10 +1,8 @@
-using System.Linq;
-using System.Threading;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -24,15 +22,26 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         public async void Handle_SuccessfulMoveBoardToAnotherProject_ReturnsTask()
         {
             SetupDbContext();
-
+    
             var request = new MoveBoardToAnotherProjectRequest() { BoardId = 1, ProjectId = 2};
+            
+            var mockBoardService = SetupMockBoardService();
+            mockBoardService.Setup(x => x.MoveBoardToAnotherProject(It.IsAny<Board>(), 
+                It.IsAny<Project>())
+            ).Callback((Board board, Project newProject) =>
+            {
+                board.Project = newProject;
+            });
             
             var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityService().Object,
+                mockBoardService.Object,
                 SetupMockMediatorService().Object);
 
             await moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None);
+            
+            mockBoardService.Verify(x => x.MoveBoardToAnotherProject(It.IsAny<Board>(), It.IsAny<Project>()), Times.Once);
             
             Assert.Null(_dbContext.Boards.FirstOrDefault(x => x.Project == _dbContext.Projects.First(d => d.Id == 1)));
             Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Project == _dbContext.Projects.First(d => d.Id == 2)));
@@ -52,7 +61,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityService().Object,
+                SetupProjectSecurityService().Object, 
+                SetupMockBoardService().Object,
                 mediatorMock.Object
             );
 
@@ -77,6 +87,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var moveBoardToAnotherProjectRequestHandler = new MoveBoardToAnotherProjectRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityService().Object,
+                SetupMockBoardService().Object,
                 mediatorMock.Object
             );
             
@@ -102,6 +113,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             mock.Setup(x => x.CheckAccess(It.IsAny<Project>(), It.IsAny<ProjectRoles>())).Verifiable();
             
             return new Mock<IProjectSecurityService>();
+        }
+        
+        private static Mock<IBoardService> SetupMockBoardService()
+        {
+            var mock = new Mock<IBoardService>();
+            
+            return mock;
         }
         
         private void SetupDbContext()

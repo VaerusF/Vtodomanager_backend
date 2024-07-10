@@ -1,9 +1,7 @@
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
@@ -16,17 +14,20 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoardHeaderBackground
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IProjectsFilesService _projectFilesService;
+        private readonly IBoardService _boardService;
         private readonly IMediator _mediator;
         
         public DeleteBoardHeaderBackgroundRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
             IProjectsFilesService projectFilesService,
+            IBoardService boardService,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _projectFilesService = projectFilesService;
+            _boardService = boardService;
             _mediator = mediator;
         }
         
@@ -46,7 +47,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoardHeaderBackground
             if (string.IsNullOrWhiteSpace(board.ImageHeaderPath)) return;
             _projectFilesService.DeleteProjectFile(board.Project, board, board.ImageHeaderPath);
 
-            board.ImageHeaderPath = null;
+            _boardService.UpdateImageHeaderPath(board, null);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
