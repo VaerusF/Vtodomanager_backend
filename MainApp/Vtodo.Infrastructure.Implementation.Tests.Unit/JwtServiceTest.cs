@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using Microsoft.Extensions.Options;
 using Xunit;
 using Moq;
@@ -28,7 +25,7 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
             _dbContext.Accounts.AddRange(GetTestAccountsList());
             _dbContext.SaveChanges();
             
-            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, clientInfoService.Object);
+            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, SetupIpListOptions().Object, clientInfoService.Object);
 
             var resultToken = jwtService.GenerateToken(_dbContext.Accounts.First());
             Assert.NotNull(resultToken);
@@ -47,7 +44,7 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
             _dbContext.Accounts.AddRange(GetTestAccountsList());
             _dbContext.SaveChanges();
             
-            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, clientInfoService.Object);
+            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, SetupIpListOptions().Object, clientInfoService.Object);
 
             var resultToken = jwtService.GenerateRefreshToken(_dbContext.Accounts.First(), "127.0.0.1", "Linux");
             Assert.NotNull(resultToken);
@@ -68,7 +65,7 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
             _dbContext.Accounts.AddRange(GetTestAccountsList());
             _dbContext.SaveChanges();
             
-            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, clientInfoService.Object);
+            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, SetupIpListOptions().Object, clientInfoService.Object);
             
             var token = jwtService.GenerateRefreshToken(_dbContext.Accounts.First(), "127.0.0.1", "Linux");
 
@@ -86,7 +83,7 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
             _dbContext.Accounts.AddRange(GetTestAccountsList());
             _dbContext.SaveChanges();
             
-            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, clientInfoService.Object);
+            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, SetupIpListOptions().Object,  clientInfoService.Object);
             
             var token = jwtService.GenerateRefreshToken(_dbContext.Accounts.First(), "127.0.0.1", "Linux");
 
@@ -105,7 +102,7 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
             _dbContext.Accounts.AddRange(GetTestAccountsList());
             _dbContext.SaveChanges();
             
-            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, clientInfoService.Object);
+            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, SetupIpListOptions().Object, clientInfoService.Object);
 
             var token = jwtService.GenerateRefreshToken(_dbContext.Accounts.First(), "127.0.0.1", "Linux");
             
@@ -127,7 +124,7 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
             _dbContext.Accounts.AddRange(GetTestAccountsList());
             _dbContext.SaveChanges();
             
-            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, clientInfoService.Object);
+            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, SetupIpListOptions().Object, clientInfoService.Object);
             
             jwtService.GenerateRefreshToken(_dbContext.Accounts.First(), "127.0.0.1", "Linux");
             jwtService.GenerateRefreshToken(_dbContext.Accounts.First(), "127.0.0.2", "Linux");
@@ -153,7 +150,7 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
             _dbContext.Accounts.AddRange(GetTestAccountsList());
             _dbContext.SaveChanges();
             
-            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, clientInfoService.Object);
+            var jwtService = new JwtService(_dbContext, SetupJwtOptions().Object, SetupIpListOptions().Object, clientInfoService.Object);
             
             var resultAccessToken = jwtService.GenerateNewTokensAfterLogin(_dbContext.Accounts.First(), out string resultRefreshToken);
             Assert.NotNull(resultAccessToken);
@@ -192,7 +189,6 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
                 Key = "testsetetsetestsetsetZTeteststestsdfgfdhgsjgfdjhsdtgjsdtgjsgjsgfjfsjfgsjhnytdkjmuhtkdtcf",
                 RefreshKey = "tkeytsdfsdfsdgahreahestsetsetseatgarwethgfdhfghfdghfgxhbijfdghbjofgdhbjfohbjfdgohjfdgohgrewasvgyt53w",
                 Issuer = "https://localhost:3000",
-                Audience = "https://localhost:3000",
                 AccessTokenLifeTimeInMinutes = 50,
                 RefreshTokenLifeTimeInDays = 50,
             });
@@ -200,6 +196,16 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
             return jwtOptions;
         }
         
+        private static Mock<IOptions<IpListOptions>> SetupIpListOptions()
+        {
+            var ipListOptions = new Mock<IOptions<IpListOptions>>();
+            ipListOptions.Setup(x => x.Value).Returns(new IpListOptions()
+            {
+                FrontClientAddress = "http://127.0.0.1:3000"
+            });
+
+            return ipListOptions;
+        }
     }
 }
 

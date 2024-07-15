@@ -48,6 +48,7 @@ namespace Vtodo.Web
             services.Configure<JwtOptions>(Configuration.GetSection("JwtOptions"));
             services.Configure<HasherOptions>(Configuration.GetSection("HasherOptions"));
             services.Configure<ProjectFilesOptions>(Configuration.GetSection("ProjectFilesOptions"));
+            services.Configure<IpListOptions>(Configuration.GetSection("IpListOptions"));
             
             services.AddDbContext<IDbContext, AppDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("PgSqlConnection"),
@@ -71,7 +72,7 @@ namespace Vtodo.Web
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = Configuration["JwtOptions:Issuer"],
-                        ValidAudience = Configuration["JwtOptions:Audience"],
+                        ValidAudience = Configuration["IpListOptions:FrontClientAddress"],
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtOptions:Key"]!)),
                         ClockSkew = TimeSpan.Zero,
                     };
@@ -152,7 +153,7 @@ namespace Vtodo.Web
             app.UseRouting();
             
             app.UseCors(x => x
-                .WithOrigins(Configuration.GetValue<string>("ClientAddress") ?? throw new Exception("ClientAddress is not defined in configuration"))
+                .WithOrigins(Configuration["IpListOptions:FrontClientAddress"] ?? throw new Exception("FrontClientAddress is not defined in configuration"))
                 .AllowCredentials()
                 .AllowAnyMethod()
                 .AllowAnyHeader());

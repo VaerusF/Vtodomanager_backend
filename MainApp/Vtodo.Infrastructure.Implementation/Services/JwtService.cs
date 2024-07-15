@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Vtodo.Entities.Exceptions;
@@ -19,12 +15,18 @@ namespace Vtodo.Infrastructure.Implementation.Services
     {
         private readonly IDbContext _dbContext;
         private readonly JwtOptions _jwtOptions;
+        private readonly IpListOptions _ipListOptions;
         private readonly IClientInfoService _clientInfoService;
         
-        public JwtService(IDbContext dbContext, IOptions<JwtOptions> jwtOptions, IClientInfoService clientInfoService)
+        public JwtService(
+            IDbContext dbContext, 
+            IOptions<JwtOptions> jwtOptions, 
+            IOptions<IpListOptions> ipListOptions,
+            IClientInfoService clientInfoService)
         {
             _dbContext = dbContext;
             _jwtOptions = jwtOptions.Value;
+            _ipListOptions = ipListOptions.Value;
             _clientInfoService = clientInfoService;
         }
 
@@ -34,7 +36,7 @@ namespace Vtodo.Infrastructure.Implementation.Services
             
             var tokenOptions = new JwtSecurityToken(
                     issuer: _jwtOptions.Issuer,
-                    audience: _jwtOptions.Audience,
+                    audience: _ipListOptions.FrontClientAddress,
                     expires: DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenLifeTimeInMinutes),
                     signingCredentials: new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256),
                     claims: new List<Claim>()
@@ -53,7 +55,7 @@ namespace Vtodo.Infrastructure.Implementation.Services
            var expireAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenLifeTimeInDays);
            var tokenOptions = new JwtSecurityToken(
                    issuer: _jwtOptions.Issuer,
-                   audience: _jwtOptions.Audience,
+                   audience: _ipListOptions.FrontClientAddress,
                    expires: expireAt,
                    signingCredentials: new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256),
                    claims: new List<Claim>()
