@@ -1,11 +1,7 @@
-using System.Linq;
-using System.Threading;
-using AutoMapper;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;

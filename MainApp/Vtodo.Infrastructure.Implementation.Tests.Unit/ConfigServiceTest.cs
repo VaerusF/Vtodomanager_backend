@@ -61,10 +61,34 @@ namespace Vtodo.Infrastructure.Implementation.Tests.Unit
 
             return projectFilesOptions;
         }
+        
+        private static Mock<IOptions<IpListOptions>> SetupIpListOptions()
+        {
+            var ipListOptions = new Mock<IOptions<IpListOptions>>();
+            ipListOptions.Setup(x => x.Value).Returns(new IpListOptions()
+            {
+                FrontClientAddress = "http://127.0.0.1:3000"
+            });
+
+            return ipListOptions;
+        }
+        
+        private static Mock<IOptions<ConnectionStringsOptions>> SetupConnectionStringsOptions()
+        {
+            var connectionStringsOptions = new Mock<IOptions<ConnectionStringsOptions>>();
+            connectionStringsOptions.Setup(x => x.Value).Returns(new ConnectionStringsOptions()
+            {
+                PgSqlConnection = "",
+                RabbitMqLogger = ""
+            });
+
+            return connectionStringsOptions;
+        }
 
         private static ConfigService  SetupConfigService()
         {
-            return new ConfigService(SetupHasherOptions().Object, SetupProjectFilesOptions().Object);
+            return new ConfigService(SetupHasherOptions().Object, SetupProjectFilesOptions().Object,
+                SetupIpListOptions().Object, SetupConnectionStringsOptions().Object);
         }
     }
 }

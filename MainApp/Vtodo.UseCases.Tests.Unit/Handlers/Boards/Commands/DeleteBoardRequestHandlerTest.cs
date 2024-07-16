@@ -1,16 +1,11 @@
-using System.Linq;
-using System.Threading;
-using AutoMapper;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoard;
-using Vtodo.UseCases.Handlers.Boards.Dto;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
@@ -31,7 +26,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var deleteBoardRequestHandler = new DeleteBoardRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityService().Object,
-                SetupMockMediatorService().Object);
+                SetupMockMediatorService().Object
+            );
             
             Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Id == 1));
             
@@ -54,7 +50,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var deleteBoardRequestHandler = new DeleteBoardRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityService().Object,
-                mediatorMock.Object);
+                mediatorMock.Object
+            );
             
             await deleteBoardRequestHandler.Handle(request, CancellationToken.None);
             

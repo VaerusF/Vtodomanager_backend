@@ -1,9 +1,4 @@
-using System.Linq;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Vtodo.DataAccess.Postgres;
 
 namespace Vtodo.Web

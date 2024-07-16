@@ -49,6 +49,7 @@ namespace Vtodo.Web
             services.Configure<HasherOptions>(Configuration.GetSection("HasherOptions"));
             services.Configure<ProjectFilesOptions>(Configuration.GetSection("ProjectFilesOptions"));
             services.Configure<IpListOptions>(Configuration.GetSection("IpListOptions"));
+            services.Configure<ConnectionStringsOptions>(Configuration.GetSection("ConnectionStrings"));
             
             services.AddDbContext<IDbContext, AppDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("PgSqlConnection"),
@@ -90,6 +91,7 @@ namespace Vtodo.Web
             services.AddScoped<ICurrentAccountService, CurrentAccountService>();
             services.AddScoped<IClientInfoService, ClientInfoService>();
             services.AddScoped<IFileManagerService, FileManagerService>();
+            services.AddScoped<ILogProducerService, LogProducerService>();
 
             services.AddHttpContextAccessor();
             

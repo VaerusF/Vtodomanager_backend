@@ -1,27 +1,24 @@
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using MediatR;
-using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 using Vtodo.Entities.Exceptions;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto;
+using Vtodo.UseCases.Handlers.Logs.Commands.SendLogToLogger;
 
 namespace Vtodo.Web.Utils
 {
-    public class ExceptionHandlerMiddleware
+    internal class ExceptionHandlerMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IMediator _mediator;
-
-        public ExceptionHandlerMiddleware(RequestDelegate next, IMediator mediator)
+        
+        public ExceptionHandlerMiddleware(
+            RequestDelegate next
+        )
         {
             _next = next;
-            _mediator = mediator;
         }
         
-        public async Task Invoke(HttpContext httpContext)
+        public async Task Invoke(HttpContext httpContext, IMediator mediator, ILogger<ExceptionHandlerMiddleware> logger)
         {
             try
             {
@@ -30,12 +27,28 @@ namespace Vtodo.Web.Utils
             catch (CustomException e)
             {
                 if (!httpContext.Response.HasStarted)
-                    await _mediator.Send(new SendErrorToClientRequest() { Error = new ClientError() { Code = e.Code, Message = e.Message} });
+                    await mediator.Send(new SendErrorToClientRequest() { Error = new ClientError() { Code = e.Code, Message = e.Message} });
             }
-            catch
+            catch (Exception ex)
             {
                 if (!httpContext.Response.HasStarted)
-                    await _mediator.Send(new SendErrorToClientRequest() { Error = new ClientError() { Code = HttpStatusCode.InternalServerError, Message = "Internal server error"} });
+                {
+                    try
+                    { 
+                        await mediator.Send(new SendLogToLoggerRequest() { 
+                                LogLevel = LogLevel.Error, 
+                                Message = $"Exception:  {ex.InnerException}"
+                            }
+                        );
+                    }
+                    catch (Exception ex2)
+                    {
+                        logger.Log(LogLevel.Critical, $"RabbitMqLogger error: {ex2.InnerException}");
+                    }
+
+                    await mediator.Send(new SendErrorToClientRequest() { Error = new ClientError() { Code = HttpStatusCode.InternalServerError, Message = "Internal server error"} });
+                }
+                   
             }
         }
     }

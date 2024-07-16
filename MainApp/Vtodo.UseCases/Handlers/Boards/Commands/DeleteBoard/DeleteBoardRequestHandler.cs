@@ -1,13 +1,12 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
+using Vtodo.UseCases.Handlers.Logs.Commands.SendLogToLogger;
 
 namespace Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoard
 {
@@ -43,6 +42,12 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoard
             _dbContext.Boards.Remove(board);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
+            
+            await _mediator.Send(new SendLogToLoggerRequest() { 
+                    LogLevel = LogLevel.Information, 
+                    Message = $"Board {board.Id} \"{board.Title}\" has been deleted"
+                }, cancellationToken
+            );
         }
     }
 }
