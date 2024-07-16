@@ -4,13 +4,14 @@
 Реализованы базовые операции CRUD для сущностей проекта:
 Проект, доска, задача, а также регистрация и авторизация с использованием JWT токенов.
 
-### Основной стек технологий
+### Cтек технологий
 * ASP.NET Core;
 * Entity Framework Core;
 * PostgreSQL 14;
 * MediatR;
 * Swashbuckle (Swagger);
 * AutoMapper;
+* RabbitMQ;
 * Docker.
 
 ### Запуск проекта
