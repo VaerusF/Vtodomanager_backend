@@ -1,7 +1,7 @@
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
-using Microsoft.Extensions.Logging;
 using Vtodo.Entities.Enums;
+using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
@@ -42,9 +42,12 @@ namespace Vtodo.UseCases.Handlers.Projects.Commands.DeleteProject
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await _mediator.Send(new SendLogToLoggerRequest() { 
-                    LogLevel = LogLevel.Information, 
-                    Message = $"Project {project.Id} \"{project.Title}\" has been deleted"
+            await _mediator.Send(new SendLogToLoggerRequest() { Log = new Log()
+                    {
+                        LogLevel = CustomLogLevels.Information, 
+                        Message = $"Project {project.Id} \"{project.Title}\" has been deleted",
+                        DateTime = DateTime.UtcNow
+                    }
                 }, cancellationToken
             );
         }

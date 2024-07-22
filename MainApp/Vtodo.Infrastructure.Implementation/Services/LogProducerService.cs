@@ -1,6 +1,6 @@
-using System.Text;
-using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using RabbitMQ.Client;
+using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 
 namespace Vtodo.Infrastructure.Implementation.Services;
@@ -14,24 +14,24 @@ internal class LogProducerService : ILogProducerService
         _configService = configService;
     }
     
-    public void SendLog(LogLevel logLevel, string message)
+    public void SendLog(Log log)
     {
         var factory = new ConnectionFactory { Uri = new Uri(_configService.RabbitMqLoggerConnectionString) };
 
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
-        channel.QueueDeclare(queue: $"Logs_{ logLevel.ToString() }",
+        channel.QueueDeclare(queue: $"Logs_{ log.LogLevel.ToString() }",
             durable: true,
             exclusive: false,
             autoDelete: false,
             arguments: null
         );
 
-        var body = Encoding.UTF8.GetBytes(message);
+        var body = JsonSerializer.SerializeToUtf8Bytes(log);
 
         channel.BasicPublish(exchange: "",
-            routingKey: $"Logs_{ logLevel.ToString() }",
+            routingKey: $"Logs_{ log.LogLevel.ToString() }",
             basicProperties: null,
             body: body
         );

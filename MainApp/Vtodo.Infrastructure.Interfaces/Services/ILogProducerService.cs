@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
+using Vtodo.Entities.Models;
 
 namespace Vtodo.Infrastructure.Interfaces.Services;
 
 internal interface ILogProducerService
 {
-    void SendLog(LogLevel logLevel, string message);
+    void SendLog(Log log);
 }

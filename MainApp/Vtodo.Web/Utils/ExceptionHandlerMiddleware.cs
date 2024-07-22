@@ -1,6 +1,8 @@
 using System.Net;
 using MediatR;
+using Vtodo.Entities.Enums;
 using Vtodo.Entities.Exceptions;
+using Vtodo.Entities.Models;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto;
 using Vtodo.UseCases.Handlers.Logs.Commands.SendLogToLogger;
@@ -35,9 +37,12 @@ namespace Vtodo.Web.Utils
                 {
                     try
                     { 
-                        await mediator.Send(new SendLogToLoggerRequest() { 
-                                LogLevel = LogLevel.Error, 
-                                Message = $"Exception:  {ex.InnerException}"
+                        await mediator.Send(new SendLogToLoggerRequest() { Log = new Log()
+                                {
+                                    LogLevel = CustomLogLevels.Error, 
+                                    Message = $"Exception:  {ex.InnerException}",
+                                    DateTime = DateTime.UtcNow
+                                }
                             }
                         );
                     }
