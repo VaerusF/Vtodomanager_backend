@@ -1,7 +1,8 @@
- <Project>
-    <PropertyGroup>
-        <OutputPath>$(SolutionDir)\Builds\$(Configuration)\$(MSBuildProjectName)</OutputPath>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <DocumentationFile>$(SolutionDir)\Docs\$(MSBuildProjectName).xml</DocumentationFile>
-    </PropertyGroup>
+<Project>
+  <Import Condition="Exists('$(MSBuildProjectDirectory)\obj\$(MSBuildProjectFile).EntityFrameworkCore.targets')" Project="$(MSBuildProjectDirectory)\obj\$(MSBuildProjectFile).EntityFrameworkCore.targets" />
+  <PropertyGroup>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)Builds\$(Configuration)</ArtifactsPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DocumentationFile>$(MSBuildThisFileDirectory)Docs\$(MSBuildProjectName).xml</DocumentationFile>
+  </PropertyGroup>
 </Project>
