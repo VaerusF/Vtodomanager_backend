@@ -39,6 +39,7 @@ namespace Vtodo.Web.Utils
                     { 
                         await mediator.Send(new SendLogToLoggerRequest() { Log = new Log()
                                 {
+                                    ServiceName = "MainApp",
                                     LogLevel = CustomLogLevels.Error, 
                                     Message = $"Exception:  {ex.InnerException}",
                                     DateTime = DateTime.UtcNow

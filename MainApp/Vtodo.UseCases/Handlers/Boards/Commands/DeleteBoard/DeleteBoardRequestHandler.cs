@@ -45,6 +45,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoard
             
             await _mediator.Send(new SendLogToLoggerRequest() { Log = new Log()
                     {
+                        ServiceName = "MainApp",
                         LogLevel = CustomLogLevels.Information, 
                         Message = $"Board {board.Id} \"{board.Title}\" has been deleted",
                         DateTime = DateTime.UtcNow

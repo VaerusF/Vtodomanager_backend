@@ -44,6 +44,7 @@ namespace Vtodo.UseCases.Handlers.Projects.Commands.DeleteProject
 
             await _mediator.Send(new SendLogToLoggerRequest() { Log = new Log()
                     {
+                        ServiceName = "MainApp",
                         LogLevel = CustomLogLevels.Information, 
                         Message = $"Project {project.Id} \"{project.Title}\" has been deleted",
                         DateTime = DateTime.UtcNow
