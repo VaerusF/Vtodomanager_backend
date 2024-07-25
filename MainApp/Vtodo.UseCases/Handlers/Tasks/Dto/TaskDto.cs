@@ -4,7 +4,7 @@ namespace Vtodo.UseCases.Handlers.Tasks.Dto
 {
     public class TaskDto
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         
         [Required]
         [StringLength(255, MinimumLength = 3)]
@@ -20,9 +20,9 @@ namespace Vtodo.UseCases.Handlers.Tasks.Dto
         public bool IsCompleted { get; set; }
         
         [Required]
-        public int BoardId { get; set; }
+        public long BoardId { get; set; }
         
-        public int? ParentId { get; set; }
+        public long? ParentId { get; set; }
         
         [Required]
         public int PrioritySort { get; set; }

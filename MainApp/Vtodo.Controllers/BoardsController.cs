@@ -37,7 +37,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<BoardDto>> Get(int id)
+        public async Task<ActionResult<BoardDto>> Get(long id)
         {
             return await _mediator.Send(new GetBoardRequest() { Id = id});
         }
@@ -51,7 +51,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
         [HttpGet("by_project/{id}")]
-        public async Task<ActionResult<List<BoardDto>>> GetByTask(int id)
+        public async Task<ActionResult<List<BoardDto>>> GetByTask(long id)
         {
             return await _mediator.Send(new GetBoardsByProjectRequest() { ProjectId = id});
         }
@@ -80,7 +80,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
         [HttpPut("{id:int}")]
-        public async Task Update(int id, [FromBody] UpdateBoardDto updateBoardDto)
+        public async Task Update(long id, [FromBody] UpdateBoardDto updateBoardDto)
         {
             await _mediator.Send(new UpdateBoardRequest() { Id = id, UpdateBoardDto = updateBoardDto});
         }
@@ -97,7 +97,7 @@ namespace Vtodo.Controllers
         /// <response code="404">Board not found</response>
         /// <response code="404">Project not found</response>
         [HttpPut("{boardId:int}/moveto/project/{projectId:int}")]
-        public async Task MoveToProject(int boardId, int projectId)
+        public async Task MoveToProject(long boardId, long projectId)
         {
             await _mediator.Send(new MoveBoardToAnotherProjectRequest() { BoardId = boardId, ProjectId = projectId});
         }
@@ -113,7 +113,7 @@ namespace Vtodo.Controllers
         /// <response code="404">Board not found</response>
         /// <response code="500">File not found</response>
         [HttpGet("{id:int}/header_background")]
-        public async Task<ActionResult<FileStream?>> GetBoardHeaderBackground(int id)
+        public async Task<ActionResult<FileStream?>> GetBoardHeaderBackground(long id)
         {
             var file = await _mediator.Send(new GetBoardHeaderBackgroundRequest() {Id = id});
             return file == null ? Ok() : File(file, "application/octet-stream", Path.GetFileName(file.Name));
@@ -130,7 +130,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
         [HttpPut("{id:int}/header_background")]
-        public async Task UploadBoardHeaderBackground(int id, IFormFile uploadBoardHeaderBackground)
+        public async Task UploadBoardHeaderBackground(long id, IFormFile uploadBoardHeaderBackground)
         {
             await _mediator.Send(new UploadBoardHeaderBackgroundRequest () { Id = id, BackgroundImage = uploadBoardHeaderBackground.OpenReadStream(), FileName = uploadBoardHeaderBackground.FileName });
         }
@@ -145,7 +145,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
         [HttpPut("{id:int}/delete_header_background")]
-        public async Task DeleteBoardHeaderBackground(int id)
+        public async Task DeleteBoardHeaderBackground(long id)
         {
             await _mediator.Send(new DeleteBoardHeaderBackgroundRequest () { Id = id});
         }
@@ -159,7 +159,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
         [HttpDelete("{id:int}")]
-        public async Task Delete(int id)
+        public async Task Delete(long id)
         {
             await _mediator.Send(new DeleteBoardRequest() { Id = id});
         }

@@ -16,15 +16,17 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                 name: "Accounts",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Email = table.Column<string>(type: "text", nullable: false),
                     Username = table.Column<string>(type: "text", nullable: false),
                     Firstname = table.Column<string>(type: "text", nullable: true),
                     Surname = table.Column<string>(type: "text", nullable: true),
                     HashedPassword = table.Column<string>(type: "text", nullable: false),
+                    Salt = table.Column<byte[]>(type: "bytea", nullable: false),
                     RegisteredAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    IsBanned = table.Column<bool>(type: "boolean", nullable: false)
+                    IsBanned = table.Column<bool>(type: "boolean", nullable: false),
+                    IsVerified = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -32,10 +34,35 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProjectBoardsFiles",
+                columns: table => new
+                {
+                    ProjectId = table.Column<long>(type: "bigint", nullable: false),
+                    BoardId = table.Column<long>(type: "bigint", nullable: false),
+                    FileName = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProjectBoardsFiles", x => new { x.ProjectId, x.BoardId, x.FileName });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProjectFiles",
+                columns: table => new
+                {
+                    ProjectId = table.Column<long>(type: "bigint", nullable: false),
+                    FileName = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProjectFiles", x => new { x.ProjectId, x.FileName });
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Projects",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Title = table.Column<string>(type: "text", nullable: false),
                     CreationDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
@@ -46,38 +73,44 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AccountProject",
+                name: "ProjectTasksFiles",
                 columns: table => new
                 {
-                    MemberInProjectsId = table.Column<int>(type: "integer", nullable: false),
-                    MembersId = table.Column<int>(type: "integer", nullable: false)
+                    ProjectId = table.Column<long>(type: "bigint", nullable: false),
+                    TaskId = table.Column<long>(type: "bigint", nullable: false),
+                    FileName = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AccountProject", x => new { x.MemberInProjectsId, x.MembersId });
-                    table.ForeignKey(
-                        name: "FK_AccountProject_Accounts_MembersId",
-                        column: x => x.MembersId,
-                        principalTable: "Accounts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_AccountProject_Projects_MemberInProjectsId",
-                        column: x => x.MemberInProjectsId,
-                        principalTable: "Projects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                    table.PrimaryKey("PK_ProjectTasksFiles", x => new { x.ProjectId, x.TaskId, x.FileName });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RefreshTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    AccountId = table.Column<long>(type: "bigint", nullable: false),
+                    Token = table.Column<string>(type: "text", nullable: false),
+                    ExpireAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    Ip = table.Column<string>(type: "text", nullable: false),
+                    Device = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefreshTokens", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Boards",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Title = table.Column<string>(type: "text", nullable: false),
                     PrioritySort = table.Column<int>(type: "integer", nullable: false),
-                    ProjectId = table.Column<int>(type: "integer", nullable: false)
+                    ProjectId = table.Column<long>(type: "bigint", nullable: false),
+                    ImageHeaderPath = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -94,9 +127,9 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                 name: "ProjectAccountsRoles",
                 columns: table => new
                 {
-                    ProjectRole = table.Column<int>(type: "integer", nullable: false),
-                    ProjectId = table.Column<int>(type: "integer", nullable: false),
-                    AccountId = table.Column<int>(type: "integer", nullable: false)
+                    ProjectId = table.Column<long>(type: "bigint", nullable: false),
+                    AccountId = table.Column<long>(type: "bigint", nullable: false),
+                    ProjectRole = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -119,7 +152,7 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                 name: "Tasks",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Title = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
@@ -127,8 +160,9 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                     Priority = table.Column<int>(type: "integer", nullable: false),
                     EndDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     IsCompleted = table.Column<bool>(type: "boolean", nullable: false),
-                    BoardId = table.Column<int>(type: "integer", nullable: false),
-                    ParentTaskId = table.Column<int>(type: "integer", nullable: true)
+                    BoardId = table.Column<long>(type: "bigint", nullable: false),
+                    ParentTaskId = table.Column<long>(type: "bigint", nullable: true),
+                    ImageHeaderPath = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -147,11 +181,6 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AccountProject_MembersId",
-                table: "AccountProject",
-                column: "MembersId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Boards_ProjectId",
                 table: "Boards",
                 column: "ProjectId");
@@ -160,11 +189,6 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                 name: "IX_ProjectAccountsRoles_AccountId",
                 table: "ProjectAccountsRoles",
                 column: "AccountId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProjectAccountsRoles_ProjectId",
-                table: "ProjectAccountsRoles",
-                column: "ProjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tasks_BoardId",
@@ -181,10 +205,19 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AccountProject");
+                name: "ProjectAccountsRoles");
 
             migrationBuilder.DropTable(
-                name: "ProjectAccountsRoles");
+                name: "ProjectBoardsFiles");
+
+            migrationBuilder.DropTable(
+                name: "ProjectFiles");
+
+            migrationBuilder.DropTable(
+                name: "ProjectTasksFiles");
+
+            migrationBuilder.DropTable(
+                name: "RefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "Tasks");

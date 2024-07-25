@@ -5,7 +5,7 @@ namespace Vtodo.UseCases.Handlers.ProjectsRoles.Commands.AddMember
 {
     public class AddMemberRequest : IRequest
     {
-        public int ProjectId { get; set; }
+        public long ProjectId { get; set; }
         
         public AddMemberDto AddMemberDto { get; set; } = null!;
     }

@@ -31,7 +31,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<ProjectDto>> Get(int id)
+        public async Task<ActionResult<ProjectDto>> Get(long id)
         {
            return await _mediator.Send(new GetProjectRequest() { Id = id});
         }
@@ -73,7 +73,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
         [HttpPut("{id:int}")]
-        public async Task Update(int id, [FromBody] UpdateProjectDto updateProjectDto)
+        public async Task Update(long id, [FromBody] UpdateProjectDto updateProjectDto)
         {
             await _mediator.Send(new UpdateProjectRequest() { Id = id, UpdateProjectDto = updateProjectDto});
         }
@@ -87,7 +87,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
         [HttpDelete("{id:int}")]
-        public async Task Delete(int id)
+        public async Task Delete(long id)
         {
             await _mediator.Send(new DeleteProjectRequest { Id = id});
         }

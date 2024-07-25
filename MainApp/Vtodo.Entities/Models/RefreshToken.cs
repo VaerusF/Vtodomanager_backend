@@ -5,10 +5,10 @@ namespace Vtodo.Entities.Models
 {
     public class RefreshToken
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         
         [Required]
-        public int AccountId { get; set; }
+        public long AccountId { get; set; }
         
         [Required]
         public string Token { get; set; } = string.Empty;

@@ -5,6 +5,6 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoard
 {
     public class GetBoardRequest : IRequest<BoardDto>
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
     }
 }

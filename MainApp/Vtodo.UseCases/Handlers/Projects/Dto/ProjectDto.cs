@@ -8,7 +8,7 @@ namespace Vtodo.UseCases.Handlers.Projects.Dto
     public class ProjectDto
     {
         [Required]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required]
         public string Title { get; set; } = string.Empty;

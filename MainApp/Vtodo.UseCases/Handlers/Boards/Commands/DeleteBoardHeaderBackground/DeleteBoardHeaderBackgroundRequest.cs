@@ -7,6 +7,6 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoardHeaderBackground
 {
     public class DeleteBoardHeaderBackgroundRequest : IRequest
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
     }
 }

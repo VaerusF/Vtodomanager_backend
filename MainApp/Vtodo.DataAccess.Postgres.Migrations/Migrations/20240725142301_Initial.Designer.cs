@@ -12,26 +12,26 @@ using Vtodo.DataAccess.Postgres;
 namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20230308000153_F")]
-    partial class F
+    [Migration("20240725142301_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.3")
+                .HasAnnotation("ProductVersion", "8.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Vtodo.Entities.Models.Account", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -47,8 +47,15 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                     b.Property<bool>("IsBanned")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("RegisteredAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<byte[]>("Salt")
+                        .IsRequired()
+                        .HasColumnType("bytea");
 
                     b.Property<string>("Surname")
                         .HasColumnType("text");
@@ -64,11 +71,11 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
 
             modelBuilder.Entity("Vtodo.Entities.Models.Board", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("ImageHeaderPath")
                         .HasColumnType("text");
@@ -76,8 +83,8 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                     b.Property<int>("PrioritySort")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer");
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -92,11 +99,11 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
 
             modelBuilder.Entity("Vtodo.Entities.Models.Project", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreationDate")
                         .HasColumnType("timestamp without time zone");
@@ -112,35 +119,114 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
 
             modelBuilder.Entity("Vtodo.Entities.Models.ProjectAccountsRoles", b =>
                 {
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnOrder(0);
+
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint")
+                        .HasColumnOrder(1);
+
                     b.Property<int>("ProjectRole")
                         .HasColumnType("integer")
                         .HasColumnOrder(2);
 
-                    b.Property<int>("AccountId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProjectRole");
+                    b.HasKey("ProjectId", "AccountId", "ProjectRole");
 
                     b.HasIndex("AccountId");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("ProjectAccountsRoles");
                 });
 
-            modelBuilder.Entity("Vtodo.Entities.Models.Tasks", b =>
+            modelBuilder.Entity("Vtodo.Entities.Models.ProjectBoardFile", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnOrder(0);
+
+                    b.Property<long>("BoardId")
+                        .HasColumnType("bigint")
+                        .HasColumnOrder(1);
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
+                    b.HasKey("ProjectId", "BoardId", "FileName");
+
+                    b.ToTable("ProjectBoardsFiles");
+                });
+
+            modelBuilder.Entity("Vtodo.Entities.Models.ProjectFile", b =>
+                {
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnOrder(0);
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
+                    b.HasKey("ProjectId", "FileName");
+
+                    b.ToTable("ProjectFiles");
+                });
+
+            modelBuilder.Entity("Vtodo.Entities.Models.ProjectTaskFile", b =>
+                {
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnOrder(0);
+
+                    b.Property<long>("TaskId")
+                        .HasColumnType("bigint")
+                        .HasColumnOrder(1);
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
+                    b.HasKey("ProjectId", "TaskId", "FileName");
+
+                    b.ToTable("ProjectTasksFiles");
+                });
+
+            modelBuilder.Entity("Vtodo.Entities.Models.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint");
 
-                    b.Property<int>("BoardId")
-                        .HasColumnType("integer");
+                    b.Property<string>("Device")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ExpireAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Ip")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("Vtodo.Entities.Models.TaskM", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("BoardId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -149,11 +235,14 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<string>("ImageHeaderPath")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("ParentTaskId")
-                        .HasColumnType("integer");
+                    b.Property<long?>("ParentTaskId")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
@@ -204,7 +293,7 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("Vtodo.Entities.Models.Tasks", b =>
+            modelBuilder.Entity("Vtodo.Entities.Models.TaskM", b =>
                 {
                     b.HasOne("Vtodo.Entities.Models.Board", "Board")
                         .WithMany("Tasks")
@@ -212,7 +301,7 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Vtodo.Entities.Models.Tasks", "ParentTask")
+                    b.HasOne("Vtodo.Entities.Models.TaskM", "ParentTask")
                         .WithMany("ChildrenTasks")
                         .HasForeignKey("ParentTaskId");
 
@@ -231,7 +320,7 @@ namespace Vtodo.DataAccess.Postgres.Migrations.Migrations
                     b.Navigation("Boards");
                 });
 
-            modelBuilder.Entity("Vtodo.Entities.Models.Tasks", b =>
+            modelBuilder.Entity("Vtodo.Entities.Models.TaskM", b =>
                 {
                     b.Navigation("ChildrenTasks");
                 });

@@ -5,7 +5,7 @@ namespace Vtodo.UseCases.Handlers.ProjectsRoles.Commands.ChangeOwner
 {
     public class ChangeOwnerRequest : IRequest
     {
-        public int ProjectId { get; set; }
+        public long ProjectId { get; set; }
         
         public ChangeOwnerDto ChangeOwnerDto { get; set; } = null!;
     }

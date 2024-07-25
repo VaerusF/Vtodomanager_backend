@@ -6,6 +6,6 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardsByProject
 {
     public class GetBoardsByProjectRequest : IRequest<List<BoardDto>>
     {
-        public int ProjectId { get; set; }
+        public long ProjectId { get; set; }
     }
 }

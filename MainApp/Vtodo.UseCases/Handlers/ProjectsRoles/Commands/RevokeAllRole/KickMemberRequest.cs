@@ -5,7 +5,7 @@ namespace Vtodo.UseCases.Handlers.ProjectsRoles.Commands.RevokeAllRole
 {
     public class KickMemberRequest : IRequest
     {
-        public int ProjectId { get; set; }
+        public long ProjectId { get; set; }
         
         public KickMemberDto KickMemberDto { get; set; } = null!;
     }

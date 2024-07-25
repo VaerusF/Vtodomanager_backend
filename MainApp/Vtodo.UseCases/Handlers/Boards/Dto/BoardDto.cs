@@ -4,7 +4,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Dto
 {
     public class BoardDto
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         
         [Required]
         public string Title { get; set; } = string.Empty;
@@ -13,7 +13,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Dto
         public int PrioritySort { get; set; }
         
         [Required]
-        public int ProjectId { get; set; }
+        public long ProjectId { get; set; }
 
         public string? ImageHeaderPath { get; set; }
     }

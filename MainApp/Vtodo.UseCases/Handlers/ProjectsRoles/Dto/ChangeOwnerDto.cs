@@ -7,6 +7,6 @@ namespace Vtodo.UseCases.Handlers.ProjectsRoles.Dto
     {
         //TODO переделать на username / email
         [Required]
-        public int AccountId { get; set; }
+        public long AccountId { get; set; }
     }
 }

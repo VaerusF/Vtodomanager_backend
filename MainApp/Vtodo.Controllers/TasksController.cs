@@ -36,7 +36,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">task not found</response>
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<TaskDto>> Get(int id)
+        public async Task<ActionResult<TaskDto>> Get(long id)
         {
             return await _mediator.Send(new GetTaskRequest() { Id = id});
         }
@@ -51,7 +51,7 @@ namespace Vtodo.Controllers
         /// <response code="404">Board not found</response>
         /// <response code="404">Task not found</response>
         [HttpGet("by_board/{id}")]
-        public async Task<ActionResult<List<TaskDto>>> GetByTask(int id)
+        public async Task<ActionResult<List<TaskDto>>> GetByTask(long id)
         {
             return await _mediator.Send(new GetTasksByBoardRequest() { BoardId = id});
         }
@@ -81,7 +81,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
         [HttpPut("{id:int}")]
-        public async Task Update(int id, [FromBody] UpdateTaskDto updateTaskDto)
+        public async Task Update(long id, [FromBody] UpdateTaskDto updateTaskDto)
         {
             await _mediator.Send(new UpdateTaskRequest() { Id = id, UpdateTaskDto = updateTaskDto});
         }
@@ -95,7 +95,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
         [HttpPut("{id:int}/moveto/root")]
-        public async Task MoveToRoot(int id)
+        public async Task MoveToRoot(long id)
         {
             await _mediator.Send(new MoveTaskToRootRequest() { Id = id});
         }
@@ -112,7 +112,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
         [HttpPut("{id:int}/moveto/task/{parentId:int}")]
-        public async Task MoveToTask(int id, int parentId)
+        public async Task MoveToTask(long id, long parentId)
         {
             await _mediator.Send(new MoveTaskToAnotherTaskRequest() { TaskId = id, NewParentTaskId = parentId});
         }
@@ -129,7 +129,7 @@ namespace Vtodo.Controllers
         /// <response code="404">Task not found</response>
         /// <response code="404">Board not found</response>
         [HttpPut("{id:int}/moveto/board/{boardId:int}")]
-        public async Task MoveToBoard(int id, int boardId)
+        public async Task MoveToBoard(long id, long boardId)
         {
             await _mediator.Send(new MoveTaskToAnotherBoardRequest() { TaskId = id, NewBoardId = boardId});
         }
@@ -143,7 +143,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
         [HttpDelete("{id:int}")]
-        public async Task Delete(int id)
+        public async Task Delete(long id)
         {
             await _mediator.Send(new DeleteTaskRequest() { Id = id});
         }

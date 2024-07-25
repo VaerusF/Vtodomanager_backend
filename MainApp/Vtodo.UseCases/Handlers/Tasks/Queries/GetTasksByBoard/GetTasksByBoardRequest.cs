@@ -6,6 +6,6 @@ namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard
 {
     public class GetTasksByBoardRequest : IRequest<List<TaskDto>>
     {
-        public int BoardId { get; set; }
+        public long BoardId { get; set; }
     }
 }

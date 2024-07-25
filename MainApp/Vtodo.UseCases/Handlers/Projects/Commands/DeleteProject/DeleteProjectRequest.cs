@@ -5,6 +5,6 @@ namespace Vtodo.UseCases.Handlers.Projects.Commands.DeleteProject
 {
     public class DeleteProjectRequest : IRequest
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
     }
 }

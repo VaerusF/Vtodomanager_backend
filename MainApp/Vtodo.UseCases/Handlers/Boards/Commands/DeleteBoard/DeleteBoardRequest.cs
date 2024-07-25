@@ -5,6 +5,6 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoard
 {
     public class DeleteBoardRequest : IRequest
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
     }
 }

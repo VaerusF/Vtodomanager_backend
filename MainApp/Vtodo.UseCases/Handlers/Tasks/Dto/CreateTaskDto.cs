@@ -14,9 +14,9 @@ namespace Vtodo.UseCases.Handlers.Tasks.Dto
         public string Description { get; set; } = string.Empty;
         
         [Required]
-        public int BoardId { get; set; }
+        public long BoardId { get; set; }
         
-        public int? ParentTaskId { get; set; }
+        public long? ParentTaskId { get; set; }
         
         [Required]
         [EnumDataType(typeof(TaskPriority))]

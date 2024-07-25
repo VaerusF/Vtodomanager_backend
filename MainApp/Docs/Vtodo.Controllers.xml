@@ -50,7 +50,7 @@
             <response code="401">User unauthorized</response>
             <response code="403">Access denied</response>
         </member>
-        <member name="M:Vtodo.Controllers.BoardsController.Get(System.Int32)">
+        <member name="M:Vtodo.Controllers.BoardsController.Get(System.Int64)">
             <summary>
             Get board by id
             </summary>
@@ -60,7 +60,7 @@
             <response code="403">Access denied</response>
             <response code="404">Board not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.BoardsController.GetByTask(System.Int32)">
+        <member name="M:Vtodo.Controllers.BoardsController.GetByTask(System.Int64)">
             <summary>
             Get all boards by project id
             </summary>
@@ -80,7 +80,7 @@
             <response code="403">Access denied</response>
             <response code="404">Project not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.BoardsController.Update(System.Int32,Vtodo.UseCases.Handlers.Boards.Dto.UpdateBoardDto)">
+        <member name="M:Vtodo.Controllers.BoardsController.Update(System.Int64,Vtodo.UseCases.Handlers.Boards.Dto.UpdateBoardDto)">
             <summary>
             Update board
             </summary>
@@ -91,7 +91,7 @@
             <response code="403">Access denied</response>
             <response code="404">Board not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.BoardsController.MoveToProject(System.Int32,System.Int32)">
+        <member name="M:Vtodo.Controllers.BoardsController.MoveToProject(System.Int64,System.Int64)">
             <summary>
             Move board to another project
             </summary>
@@ -104,7 +104,7 @@
             <response code="404">Board not found</response>
             <response code="404">Project not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.BoardsController.GetBoardHeaderBackground(System.Int32)">
+        <member name="M:Vtodo.Controllers.BoardsController.GetBoardHeaderBackground(System.Int64)">
             <summary>
             Get board header background image 
             </summary>
@@ -116,7 +116,7 @@
             <response code="404">Board not found</response>
             <response code="500">File not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.BoardsController.UploadBoardHeaderBackground(System.Int32,Microsoft.AspNetCore.Http.IFormFile)">
+        <member name="M:Vtodo.Controllers.BoardsController.UploadBoardHeaderBackground(System.Int64,Microsoft.AspNetCore.Http.IFormFile)">
             <summary>
             Upload board header background image 
             </summary>
@@ -128,7 +128,7 @@
             <response code="403">Access denied</response>
             <response code="404">Board not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.BoardsController.DeleteBoardHeaderBackground(System.Int32)">
+        <member name="M:Vtodo.Controllers.BoardsController.DeleteBoardHeaderBackground(System.Int64)">
             <summary>
             Delete board header background image 
             </summary>
@@ -139,7 +139,7 @@
             <response code="403">Access denied</response>
             <response code="404">Board not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.BoardsController.Delete(System.Int32)">
+        <member name="M:Vtodo.Controllers.BoardsController.Delete(System.Int64)">
             <summary>
             Delete board
             </summary>
@@ -149,7 +149,7 @@
             <response code="403">Access denied</response>
             <response code="404">Board not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.ProjectsController.Get(System.Int32)">
+        <member name="M:Vtodo.Controllers.ProjectsController.Get(System.Int64)">
             <summary>
             Get project by id
             </summary>
@@ -178,7 +178,7 @@
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>
         </member>
-        <member name="M:Vtodo.Controllers.ProjectsController.Update(System.Int32,Vtodo.UseCases.Handlers.Projects.Dto.UpdateProjectDto)">
+        <member name="M:Vtodo.Controllers.ProjectsController.Update(System.Int64,Vtodo.UseCases.Handlers.Projects.Dto.UpdateProjectDto)">
             <summary>
             Update project
             </summary>
@@ -189,7 +189,7 @@
             <response code="403">Access denied</response>
             <response code="404">Project not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.ProjectsController.Delete(System.Int32)">
+        <member name="M:Vtodo.Controllers.ProjectsController.Delete(System.Int64)">
             <summary>
             Delete project
             </summary>
@@ -199,7 +199,7 @@
             <response code="403">Access denied</response>
             <response code="404">Project not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.ProjectsRolesController.Grant(System.Int32,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.GrantRoleDto)">
+        <member name="M:Vtodo.Controllers.ProjectsRolesController.Grant(System.Int64,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.GrantRoleDto)">
             <summary>
             Grant role (One of ProjectAdmin, ProjectUpdate)
             </summary>
@@ -214,7 +214,7 @@
             <response code="404">Project not found</response>
             <response code="404">Account not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.ProjectsRolesController.Revoke(System.Int32,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.RevokeRoleDto)">
+        <member name="M:Vtodo.Controllers.ProjectsRolesController.Revoke(System.Int64,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.RevokeRoleDto)">
             <summary>
             Revoke role (One of ProjectAdmin, ProjectUpdate, ProjectMember)
             </summary>
@@ -229,7 +229,7 @@
             <response code="404">Project not found</response>
             <response code="404">Account with this role not found in project</response>
         </member>
-        <member name="M:Vtodo.Controllers.ProjectsRolesController.RevokeAll(System.Int32,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.KickMemberDto)">
+        <member name="M:Vtodo.Controllers.ProjectsRolesController.RevokeAll(System.Int64,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.KickMemberDto)">
             <summary>
             Revoke all roles (Kick member) 
             </summary>
@@ -243,7 +243,7 @@
             <response code="403">Access denied</response>
             <response code="404">Project not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.ProjectsRolesController.AddMember(System.Int32,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.AddMemberDto)">
+        <member name="M:Vtodo.Controllers.ProjectsRolesController.AddMember(System.Int64,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.AddMemberDto)">
             <summary>
             Grant member role to account
             </summary>
@@ -256,7 +256,7 @@
             <response code="404">Project not found</response>
             <response code="404">Account not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.ProjectsRolesController.ChangeOwner(System.Int32,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.ChangeOwnerDto)">
+        <member name="M:Vtodo.Controllers.ProjectsRolesController.ChangeOwner(System.Int64,Vtodo.UseCases.Handlers.ProjectsRoles.Dto.ChangeOwnerDto)">
             <summary>
             Change project owner
             </summary>
@@ -270,7 +270,7 @@
             <response code="404">Project not found</response>
             <response code="404">Account not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.Get(System.Int32)">
+        <member name="M:Vtodo.Controllers.TasksController.Get(System.Int64)">
             <summary>
             Get task by id
             </summary>
@@ -280,7 +280,7 @@
             <response code="403">Access denied</response>
             <response code="404">task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.GetByTask(System.Int32)">
+        <member name="M:Vtodo.Controllers.TasksController.GetByTask(System.Int64)">
             <summary>
             Get list of tasks by board
             </summary>
@@ -302,7 +302,7 @@
             <response code="404">Board not found</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.Update(System.Int32,Vtodo.UseCases.Handlers.Tasks.Dto.UpdateTaskDto)">
+        <member name="M:Vtodo.Controllers.TasksController.Update(System.Int64,Vtodo.UseCases.Handlers.Tasks.Dto.UpdateTaskDto)">
             <summary>
             Update task
             </summary>
@@ -313,7 +313,7 @@
             <response code="403">Access denied</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.MoveToRoot(System.Int32)">
+        <member name="M:Vtodo.Controllers.TasksController.MoveToRoot(System.Int64)">
             <summary>
             Move task to root in board
             </summary>
@@ -323,7 +323,7 @@
             <response code="403">Access denied</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.MoveToTask(System.Int32,System.Int32)">
+        <member name="M:Vtodo.Controllers.TasksController.MoveToTask(System.Int64,System.Int64)">
             <summary>
             Move task to another task as children
             </summary>
@@ -336,7 +336,7 @@
             <response code="403">Access denied</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.MoveToBoard(System.Int32,System.Int32)">
+        <member name="M:Vtodo.Controllers.TasksController.MoveToBoard(System.Int64,System.Int64)">
             <summary>
             Move task to another board
             </summary>
@@ -349,7 +349,7 @@
             <response code="404">Task not found</response>
             <response code="404">Board not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.Delete(System.Int32)">
+        <member name="M:Vtodo.Controllers.TasksController.Delete(System.Int64)">
             <summary>
             Delete task
             </summary>

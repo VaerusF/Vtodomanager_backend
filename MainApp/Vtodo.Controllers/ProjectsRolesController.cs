@@ -35,7 +35,7 @@ namespace Vtodo.Controllers
         /// <response code="404">Project not found</response>
         /// <response code="404">Account not found</response>
         [HttpPost("grant/")]
-        public async Task Grant(int id, [FromBody] GrantRoleDto role)
+        public async Task Grant(long id, [FromBody] GrantRoleDto role)
         {
             await _mediator.Send(new GrantRoleRequest() { ProjectId = id, GrantRoleDto = role});
         }
@@ -54,7 +54,7 @@ namespace Vtodo.Controllers
         /// <response code="404">Project not found</response>
         /// <response code="404">Account with this role not found in project</response>
         [HttpDelete("revoke/")]
-        public async Task Revoke(int id, [FromBody] RevokeRoleDto role)
+        public async Task Revoke(long id, [FromBody] RevokeRoleDto role)
         {
             await _mediator.Send(new RevokeRoleRequest() { ProjectId = id, RevokeRoleDto = role});
         }
@@ -72,7 +72,7 @@ namespace Vtodo.Controllers
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
         [HttpDelete("kick_member/")]
-        public async Task RevokeAll(int id, [FromBody] KickMemberDto role)
+        public async Task RevokeAll(long id, [FromBody] KickMemberDto role)
         {
             await _mediator.Send(new KickMemberRequest() { ProjectId = id, KickMemberDto = role});
         }
@@ -89,7 +89,7 @@ namespace Vtodo.Controllers
         /// <response code="404">Project not found</response>
         /// <response code="404">Account not found</response>
         [HttpPost("add_member/")]
-        public async Task AddMember(int id, [FromBody] AddMemberDto addMemberDto)
+        public async Task AddMember(long id, [FromBody] AddMemberDto addMemberDto)
         {
             await _mediator.Send(new AddMemberRequest() { ProjectId = id, AddMemberDto = addMemberDto});
         }
@@ -107,7 +107,7 @@ namespace Vtodo.Controllers
         /// <response code="404">Project not found</response>
         /// <response code="404">Account not found</response>
         [HttpPut("change_owner/")]
-        public async Task ChangeOwner(int id, [FromBody] ChangeOwnerDto changeOwnerDto)
+        public async Task ChangeOwner(long id, [FromBody] ChangeOwnerDto changeOwnerDto)
         {
             await _mediator.Send(new ChangeOwnerRequest() { ProjectId = id, ChangeOwnerDto = changeOwnerDto});
         }

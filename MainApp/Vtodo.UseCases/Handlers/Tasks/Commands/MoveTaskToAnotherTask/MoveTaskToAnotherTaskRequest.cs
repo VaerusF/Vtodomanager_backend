@@ -4,7 +4,7 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask
 {
     public class MoveTaskToAnotherTaskRequest : IRequest
     {
-        public int TaskId { get; set; }
-        public int NewParentTaskId { get; set; }
+        public long TaskId { get; set; }
+        public long NewParentTaskId { get; set; }
     }
 }

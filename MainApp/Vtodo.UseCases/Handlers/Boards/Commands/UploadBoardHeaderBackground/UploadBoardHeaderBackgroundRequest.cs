@@ -7,7 +7,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.UploadBoardHeaderBackground
 {
     public class UploadBoardHeaderBackgroundRequest : IRequest
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         
         public Stream BackgroundImage { get; set; } = null!;
         
