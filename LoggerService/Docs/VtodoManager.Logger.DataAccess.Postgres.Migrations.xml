@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>VtodoManager.Logger.DataAccess.Postgres.Migrations</name>
+    </assembly>
+    <members>
+        <member name="T:VtodoManager.Logger.DataAccess.Postgres.Migrations.Migrations.Initial">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.Logger.DataAccess.Postgres.Migrations.Migrations.Initial.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.Logger.DataAccess.Postgres.Migrations.Migrations.Initial.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.Logger.DataAccess.Postgres.Migrations.Migrations.Initial.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>

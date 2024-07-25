@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\VtodoManager.Logger.DomainServices.Interfaces\VtodoManager.Logger.DomainServices.Interfaces.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.Entities\VtodoManager.Logger.Entities.csproj" />
+    </ItemGroup>
+
+</Project>

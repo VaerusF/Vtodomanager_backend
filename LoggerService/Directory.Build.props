@@ -1,0 +1,8 @@
+<Project>
+  <Import Condition="Exists('$(MSBuildProjectDirectory)\obj\$(MSBuildProjectFile).EntityFrameworkCore.targets')" Project="$(MSBuildProjectDirectory)\obj\$(MSBuildProjectFile).EntityFrameworkCore.targets" />
+  <PropertyGroup>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)Builds\$(Configuration)</ArtifactsPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DocumentationFile>$(MSBuildThisFileDirectory)Docs\$(MSBuildProjectName).xml</DocumentationFile>
+  </PropertyGroup>
+</Project>

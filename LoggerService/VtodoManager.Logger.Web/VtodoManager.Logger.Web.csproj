@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+   <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\VtodoManager.Logger.Controllers\VtodoManager.Logger.Controllers.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.DataAccess.Postgres.Migrations\VtodoManager.Logger.DataAccess.Postgres.Migrations.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.DataAccess.Postgres\VtodoManager.Logger.DataAccess.Postgres.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.DomainServices.Implementation\VtodoManager.Logger.DomainServices.Implementation.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.DomainServices.Interfaces\VtodoManager.Logger.DomainServices.Interfaces.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.Entities\VtodoManager.Logger.Entities.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.Infrastructure.Implementation\VtodoManager.Logger.Infrastructure.Implementation.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.Infrastructure.Interfaces\VtodoManager.Logger.Infrastructure.Interfaces.csproj" />
+      <ProjectReference Include="..\VtodoManager.Logger.UseCases\VtodoManager.Logger.UseCases.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="13.0.1" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="appsettings.json" />
+      <Content Include="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="appsettings.Development.json" />
+      <Content Include="appsettings.Development.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+</Project>
