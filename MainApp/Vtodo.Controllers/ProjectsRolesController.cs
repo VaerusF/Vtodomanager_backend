@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Vtodo.UseCases.Handlers.ProjectsRoles.Commands.AddMember;
@@ -10,7 +9,7 @@ using Vtodo.UseCases.Handlers.ProjectsRoles.Dto;
 
 namespace Vtodo.Controllers
 {
-    [Route("api/v1/project/{id:int}/roles/")]
+    [Route("api/v1/project/{id:long}/roles/")]
     [ApiController]
     public class ProjectsRolesController : ControllerBase
     {

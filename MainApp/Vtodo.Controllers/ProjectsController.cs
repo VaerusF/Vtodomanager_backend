@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Vtodo.UseCases.Handlers.Projects.Commands.CreateProject;
@@ -30,7 +28,7 @@ namespace Vtodo.Controllers
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
-        [HttpGet("{id:int}")]
+        [HttpGet("{id:long}")]
         public async Task<ActionResult<ProjectDto>> Get(long id)
         {
            return await _mediator.Send(new GetProjectRequest() { Id = id});
@@ -72,7 +70,7 @@ namespace Vtodo.Controllers
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
-        [HttpPut("{id:int}")]
+        [HttpPut("{id:long}")]
         public async Task Update(long id, [FromBody] UpdateProjectDto updateProjectDto)
         {
             await _mediator.Send(new UpdateProjectRequest() { Id = id, UpdateProjectDto = updateProjectDto});
@@ -86,7 +84,7 @@ namespace Vtodo.Controllers
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
-        [HttpDelete("{id:int}")]
+        [HttpDelete("{id:long}")]
         public async Task Delete(long id)
         {
             await _mediator.Send(new DeleteProjectRequest { Id = id});
