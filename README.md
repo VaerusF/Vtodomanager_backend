@@ -16,7 +16,7 @@
 
 ### Запуск проекта
 * Для запуска проекта требуется установить Docker и Docker Compose;
-* Склонировать репозиторий `git clone https://github.com/TVSergey/VTodoManager_Backend_AspNetCore.git`;
+* Склонировать репозиторий `git clone https://github.com/VaerusF/Vtodomanager_backend.git`;
 * Перейти в корневой каталог репозитория;
 * Запустить проект, выполнив `docker-compose up --build`;
 * Перейти на `http://127.0.0.1:8080/`.
