@@ -42,6 +42,14 @@
             <response code="401">User unauthorized</response>
             <response code="403">Access denied</response>
         </member>
+        <member name="M:Vtodo.Controllers.AccountsController.Confirm(System.String)">
+            <summary>
+            Confirm account
+            </summary>
+            <response code="200"></response>
+            <response code="400">Already confirmed</response>
+            <response code="403">Access denied</response>
+        </member>
         <member name="M:Vtodo.Controllers.AccountsController.LogoutAll">
             <summary>
             Logout (Delete all current user refresh tokens)
@@ -87,6 +95,18 @@
             <param name="id">Board id</param>
             <param name="updateBoardDto">Update board Dto</param>
             <response code="200"></response>
+            <response code="401">Unauthorized</response>
+            <response code="403">Access denied</response>
+            <response code="404">Board not found</response>
+        </member>
+        <member name="M:Vtodo.Controllers.BoardsController.SwapBoardsPrioritySort(System.Int64,System.Int64)">
+            <summary>
+            Swap board priority
+            </summary>
+            <param name="boardId1">Board id</param>
+            <param name="boardId2">Board id</param>
+            <response code="200"></response>
+            <response code="400">Board ids should not be equals</response>
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>
             <response code="404">Board not found</response>

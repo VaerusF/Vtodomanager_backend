@@ -6,5 +6,6 @@ namespace Vtodo.Infrastructure.Interfaces.Services
         int HasherKeySize { get; }
         int MaxProjectFileSizeInMb { get; }
         string RabbitMqLoggerConnectionString { get; }
+        string FrontClientAddress { get; }
     }
 }

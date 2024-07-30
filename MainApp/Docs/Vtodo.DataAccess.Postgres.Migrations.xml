@@ -4,5 +4,29 @@
         <name>Vtodo.DataAccess.Postgres.Migrations</name>
     </assembly>
     <members>
+        <member name="T:Vtodo.DataAccess.Postgres.Migrations.Migrations.Initial">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.Initial.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.Initial.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.Initial.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddConfirmAccountUrl">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddConfirmAccountUrl.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddConfirmAccountUrl.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:Vtodo.DataAccess.Postgres.Migrations.Migrations.AddConfirmAccountUrl.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
     </members>
 </doc>

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Vtodo.UseCases.Handlers.Accounts.Commands.ConfirmAccount;
 using Vtodo.UseCases.Handlers.Accounts.Commands.CreateAccount;
 using Vtodo.UseCases.Handlers.Accounts.Commands.LoginByPassword;
 using Vtodo.UseCases.Handlers.Accounts.Commands.Logout;
@@ -77,6 +78,18 @@ namespace Vtodo.Controllers
         public async Task Logout([FromBody] LogoutDto logoutDto)
         {
             await _mediator.Send(new LogoutRequest() {LogoutDto = logoutDto});
+        }
+        
+        /// <summary>
+        /// Confirm account
+        /// </summary>
+        /// <response code="200"></response>
+        /// <response code="400">Already confirmed</response>
+        /// <response code="403">Access denied</response>
+        [HttpPost("confirm/{urlPart:length(128)}")]
+        public async Task Confirm(string urlPart)
+        {
+            await _mediator.Send(new ConfirmAccountRequest() { UrlPart = urlPart});
         }
         
         /// <summary>

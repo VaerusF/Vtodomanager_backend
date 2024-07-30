@@ -28,6 +28,7 @@ namespace Vtodo.Infrastructure.Implementation.Services
         public int HasherKeySize => _hasherOptions.KeySize;
 
         public int MaxProjectFileSizeInMb => _projectFilesOptions.MaxProjectFileSizeInMb;
+        public string FrontClientAddress => _ipListOptions.FrontClientAddress;
         public string RabbitMqLoggerConnectionString => _connectionStringsOptions.RabbitMqLogger;
     }
 }

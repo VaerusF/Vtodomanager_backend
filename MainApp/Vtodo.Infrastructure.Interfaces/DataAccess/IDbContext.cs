@@ -8,6 +8,7 @@ namespace Vtodo.Infrastructure.Interfaces.DataAccess
     internal interface IDbContext
     {
         public DbSet<Account> Accounts { get; set; }
+        public DbSet<ConfirmAccountUrl> ConfirmAccountUrls { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<Board> Boards { get; set; }
         public DbSet<TaskM> Tasks { get; set; }

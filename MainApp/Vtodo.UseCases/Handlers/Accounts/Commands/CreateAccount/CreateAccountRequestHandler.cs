@@ -4,6 +4,7 @@ using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Vtodo.DomainServices.Interfaces;
 using Vtodo.Infrastructure.Interfaces.Services;
+using Vtodo.UseCases.Handlers.Accounts.Commands.SendConfirmAccountUrl;
 using Vtodo.UseCases.Handlers.Accounts.Dto;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.AlreadyExists;
@@ -70,6 +71,8 @@ namespace Vtodo.UseCases.Handlers.Accounts.Commands.CreateAccount
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             var accessToken = _jwtService.GenerateNewTokensAfterLogin(account, out string refreshToken);
+            
+            await _mediator.Send(new SendConfirmAccountUrlRequest() { Account = account }, cancellationToken);
             
             return new JwtTokensDto() {AccessToken = accessToken, RefreshToken = refreshToken};
         }

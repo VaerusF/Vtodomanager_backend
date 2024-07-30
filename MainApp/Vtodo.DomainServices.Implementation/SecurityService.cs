@@ -2,6 +2,7 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 using Vtodo.DomainServices.Interfaces;
+using Vtodo.Entities.Models;
 
 namespace Vtodo.DomainServices.Implementation
 {
@@ -35,6 +36,20 @@ namespace Vtodo.DomainServices.Implementation
         public byte[] GenerateSalt(int keySize)
         {
             return RandomNumberGenerator.GetBytes(keySize);
+        }
+
+        public string GenerateConfirmAccountHashedUrlPart(Account account, int keySize, int iterations, out byte[] salt)
+        {
+            salt = GenerateSalt(keySize);
+            var hash = Rfc2898DeriveBytes.Pbkdf2(
+                Encoding.UTF8.GetBytes($"{Guid.NewGuid()}_{account.Email}_{account.Username}"),
+                salt,
+                iterations,
+                HashAlgorithmName.SHA512,
+                keySize
+            );
+
+            return Convert.ToHexString(hash);
         }
     }
 }

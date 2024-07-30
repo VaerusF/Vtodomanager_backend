@@ -27,4 +27,10 @@
       <Folder Include="Handlers\ProjectsRoles\Queries" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="System.Security.Permissions">
+        <HintPath>..\..\..\..\.nuget\packages\system.security.permissions\4.5.0\ref\netstandard2.0\System.Security.Permissions.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

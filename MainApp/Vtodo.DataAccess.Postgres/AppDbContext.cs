@@ -13,6 +13,7 @@ namespace Vtodo.DataAccess.Postgres
         }
 
         public DbSet<Account> Accounts { get; set; } = null!;
+        public DbSet<ConfirmAccountUrl> ConfirmAccountUrls { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<Board> Boards { get; set; } = null!;
         public DbSet<TaskM> Tasks { get; set; } = null!;
@@ -26,6 +27,9 @@ namespace Vtodo.DataAccess.Postgres
         {
             modelBuilder.Entity<ProjectAccountsRoles>()
                 .HasKey(m => new { m.ProjectId , m.AccountId, m.ProjectRole });
+            
+            modelBuilder.Entity<ConfirmAccountUrl>()
+                .HasKey(m => new { m.AccountId, m.UrlPart });
             
             modelBuilder.Entity<ProjectFile>()
                 .HasKey(m => new { m.ProjectId , m.FileName });
