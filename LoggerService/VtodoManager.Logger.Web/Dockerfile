@@ -1,7 +1,6 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+RUN apt-get update && apt-get install -y curl
 WORKDIR /app
-
-ENV ASPNETCORE_HTTP_PORTS=8082
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src

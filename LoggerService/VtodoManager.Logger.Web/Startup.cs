@@ -33,6 +33,8 @@ public class Startup
             options.UseNpgsql(Configuration.GetConnectionString("PgSqlConnection"),
                 x => x.MigrationsAssembly("VtodoManager.Logger.DataAccess.Postgres.Migrations")));
         
+        services.AddHealthChecks();
+
         services.AddScoped<IConfigService, ConfigService>();
         services.AddScoped<ILogSaverService, LogSaverService>();
         
@@ -58,11 +60,17 @@ public class Startup
         app.UseRouting();
         app.UseHttpsRedirection();
         
+        app.UseHealthChecks("/health_check");
+
         app.UseCookiePolicy(new CookiePolicyOptions
         {
             MinimumSameSitePolicy = SameSiteMode.Strict,
             HttpOnly = HttpOnlyPolicy.Always,
             Secure = CookieSecurePolicy.Always
+        });
+        
+        app.UseEndpoints(endpoints =>
+        {
         });
     }
 }

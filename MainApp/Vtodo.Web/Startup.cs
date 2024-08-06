@@ -80,6 +80,8 @@ namespace Vtodo.Web
                 }
             );
 
+            services.AddHealthChecks();
+            
             services.AddScoped<ISecurityService, SecurityService>();
             services.AddScoped<IProjectService, ProjectService>();
             services.AddScoped<IBoardService, BoardService>();
@@ -163,7 +165,9 @@ namespace Vtodo.Web
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseHttpsRedirection();
+            app.UseHealthChecks("/health_check");
+            
+            //app.UseHttpsRedirection();
             
             app.UseCookiePolicy(new CookiePolicyOptions
             {

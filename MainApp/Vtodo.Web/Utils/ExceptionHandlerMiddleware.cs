@@ -41,7 +41,7 @@ namespace Vtodo.Web.Utils
                                 {
                                     ServiceName = "MainApp",
                                     LogLevel = CustomLogLevels.Error, 
-                                    Message = $"Exception:  {ex.InnerException}",
+                                    Message = $"Exception:  {ex.Message},\r\n{ex.InnerException}",
                                     DateTime = DateTime.UtcNow
                                 }
                             }
@@ -49,7 +49,7 @@ namespace Vtodo.Web.Utils
                     }
                     catch (Exception ex2)
                     {
-                        logger.Log(LogLevel.Critical, $"RabbitMqLogger error: {ex2.InnerException}");
+                        logger.Log(LogLevel.Critical, $"RabbitMqLogger error: {ex.Message},\r\n{ex2.InnerException}");
                     }
 
                     await mediator.Send(new SendErrorToClientRequest() { Error = new ClientError() { Code = HttpStatusCode.InternalServerError, Message = "Internal server error"} });

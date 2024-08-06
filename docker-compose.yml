@@ -1,88 +1,174 @@
-version: "3.9"
 networks:
-  vtodo-dev:
+  vtodo_app_rabbit_dev:
     driver: bridge
-  vtodo-logger-dev:
+  vtodo_main_app_dev:
+    driver: bridge
+  vtodo_logger_dev:
     driver: bridge
 services:
   app:
-    container_name: web-app
+    container_name: main_web_app_dev
     build:
       context: .
       dockerfile: ./MainApp/Vtodo.Web/Dockerfile
     ports:
       - "8080:8080"
+      - "8081:8081"
     restart: on-failure
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORT=8081
+      - ConnectionStrings__PgSqlConnection=Server=postgres_db_dev;Port=5432;Database=vtodo;Username=vtodo_user_dev;Password=dsfsdfsdfDFSFSDFsf234123;Application Name=Vtodo;
+      - ConnectionStrings__RabbitMqLogger=amqp://vtodo_logger_rabbit_user_dev:sdfgfsdjhsytjyurjyrxjhnrjsyj@rabbitmq_vtodo_logger_dev:5672
+      - ConnectionStrings__RabbitMqVtodoApp=amqp://vtodo_app_rabbit_user_dev:elukeukeue7k7tke7kd7ksdfsdfsdfsdhgmmghmhg@rabbitmq_vtodo_main_web_app_dev:5674
+      - ProjectFilesOptions__MaxProjectFileSizeInMb=512
+      - HasherOptions__KeySize=64
+      - HasherOptions__Iterations=400000
+      - IpListOptions__FrontClientAddress=http://127.0.0.1:3000
+      - JwtOptions__Key=aergafgdklfadmgmartehlkgnmatijhpnaijateohjatepiaphjaepih
+      - JwtOptions__RefreshKey=sjstjystrjoptsrkjhsrtpjksrt0j[h345
+      - JwtOptions__Issuer=http://127.0.0.1:8080
+      - JwtOptions__AccessTokenLifeTimeInMinutes=5
+      - JwtOptions__RefreshTokenLifeTimeInDays=30
     depends_on:
-      - postgres_db
+      postgres_db_dev:
+        condition: service_healthy
+        restart: true
+      rabbitmq_vtodo_main_web_app_dev:
+        condition: service_healthy
+        restart: true
+      rabbitmq_vtodo_logger_dev:
+        condition: service_healthy
+        restart: true
     networks:
-      - vtodo-dev
-      - vtodo-logger-dev
+      - vtodo_main_app_dev
+      - vtodo_logger_dev
+      - vtodo_app_rabbit_dev
     volumes:
       - ./MainApp/Builds/appdata/:/VtodoData/
-  postgres_db:
-    container_name: vtodo_postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail http://localhost:8080/health_check || exit 1" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 60s
+  postgres_db_dev:
+    container_name: vtodo_postgres_dev
     image: postgres:14
     restart: on-failure
     environment:
-      POSTGRES_USER: vtodo
+      POSTGRES_USER: vtodo_user_dev
       POSTGRES_PASSWORD: dsfsdfsdfDFSFSDFsf234123
       POSTGRES_DB: vtodo
     ports:
       - "5432:5432"
     networks:
-      - vtodo-dev
+      - vtodo_main_app_dev
     volumes: 
-      - vtodo_postgres-data:/var/lib/postgresql/data
-  vtodo_logger_service:
-    container_name: vtodo-logger-service
+      - vtodo_postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U vtodo -d vtodo"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 60s
+  rabbitmq_vtodo_main_web_app_dev:
+    image: rabbitmq:3.13.4-management
+    hostname: rabbitmq_vtodo_main_web_app_dev
+    restart: on-failure
+    environment:
+      - RABBITMQ_DEFAULT_USER=vtodo_app_rabbit_user_dev
+      - RABBITMQ_DEFAULT_PASS=elukeukeue7k7tke7kd7ksdfsdfsdfsdhgmmghmhg
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
+    networks:
+      - vtodo_app_rabbit_dev
+    ports:
+      - "15674:15672"
+      - "5674:5672"
+    volumes:
+      - ./MainApp/Builds/rabbitmq_vtodo_main_web_app_dev:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 60s
+  vtodo_logger_service_dev:
+    container_name: vtodo_logger_service_dev
     build:
       context: .
       dockerfile: ./LoggerService/VtodoManager.Logger.Web/Dockerfile
     ports:
       - "8082:8082"
+      - "8083:8083"
     restart: on-failure
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-    depends_on:
-      - vtodo_logger_postgres_db
+      - ASPNETCORE_HTTP_PORTS=8082
+      - ASPNETCORE_HTTPS_PORT=8083
+      - ConnectionStrings__PgSqlConnection=Server=vtodo_logger_postgres_db_dev;Port=5432;Database=vtodo_logger;Username=vtodo_logger_user_dev;Password=dsfsdfsddsfsdfsdfkosdlgjsdfDFSFSDFsf234123;Application Name=VtodoLogger;
+      - ConnectionStrings__RabbitMqLogger=amqp://vtodo_logger_rabbit_user_dev:sdfgfsdjhsytjyurjyrxjhnrjsyj@rabbitmq_vtodo_logger_dev:5672
     networks:
-      - vtodo-logger-dev
+      - vtodo_logger_dev
     volumes:
       - ./LoggerService/Builds/appdata/:/VtodoLoggerData/
-  vtodo_logger_postgres_db:
-    container_name: vtodo_logger_postgres
+    depends_on:
+      vtodo_logger_postgres_db_dev:
+        condition: service_healthy
+        restart: true
+      rabbitmq_vtodo_logger_dev:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail http://localhost:8082/health_check || exit 1" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 60s
+  vtodo_logger_postgres_db_dev:
+    container_name: vtodo_logger_postgres_dev
     image: postgres:14
     restart: on-failure
     environment:
-      POSTGRES_USER: vtodo_logger
+      POSTGRES_USER: vtodo_logger_user_dev
       POSTGRES_PASSWORD: dsfsdfsddsfsdfsdfkosdlgjsdfDFSFSDFsf234123
       POSTGRES_DB: vtodo_logger
     ports:
       - "5434:5432"
     networks:
-      - vtodo-logger-dev
+      - vtodo_logger_dev
     volumes:
-      - vtodo_logger_postgres_data:/var/lib/postgresql/data
-  rabbitmq_vtodo_logger:
+      - vtodo_logger_postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U vtodo_logger -d vtodo_logger"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 60s
+  rabbitmq_vtodo_logger_dev:
     image: rabbitmq:3.13.4-management
-    hostname: rabbitmq_vtodo_logger
+    hostname: rabbitmq_vtodo_logger_dev
     restart: on-failure
     environment:
-      - RABBITMQ_DEFAULT_USER=vtodo_logger_rabbit
+      - RABBITMQ_DEFAULT_USER=vtodo_logger_rabbit_user_dev
       - RABBITMQ_DEFAULT_PASS=sdfgfsdjhsytjyurjyrxjhnrjsyj
       - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
     networks:
-      - vtodo-logger-dev
+      - vtodo_logger_dev
     ports:
       - "15672:15672"
       - "5672:5672"
     volumes:
-      - ./LoggerService/Builds/rabbitmq_vtodo_logger:/var/lib/rabbitmq
+      - ./LoggerService/Builds/rabbitmq_vtodo_logger_dev:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 60s
 volumes:
-  vtodo_postgres-data:
-    name: vtodo_postgres-data
-  vtodo_logger_postgres_data:
-    name: vtodo_logger_postgres_data
+  vtodo_postgres_data_dev:
+    name: vtodo_postgres_data_dev
+  vtodo_logger_postgres_data_dev:
+    name: vtodo_logger_postgres_data_dev
