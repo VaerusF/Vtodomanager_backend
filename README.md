@@ -30,7 +30,4 @@
     }`
 и затем указать accessToken в окне Authorize. 
 
-По умолчанию accessToken действителен 5 минут. Время жизни токенов можно изменить в файле конфигураций 
-MainApp/Vtodo.Web/appsettings.json. 
-
 Метод POST `/api/v1/accounts/refresh_tokens` позволяет получить новую пару токенов.
