@@ -8,6 +8,7 @@ using Vtodo.Infrastructure.Interfaces.Services;
 
 namespace Vtodo.Infrastructure.Implementation.Services
 {
+    //TODO провести рефакторинг
     internal class ProjectSecurityService : IProjectSecurityService
     {
         private readonly IDbContext _dbContext;
@@ -23,6 +24,19 @@ namespace Vtodo.Infrastructure.Implementation.Services
         {
             var account = _currentAccountService.GetAccount();
             var roles = _dbContext.ProjectAccountsRoles.Where(x => x.Project.Id == project.Id && x.Account.Id == account.Id).ToList();
+
+            if (roles.Find(x => x.ProjectRole == ProjectRoles.ProjectOwner) != null) return;
+            if (neededRole == ProjectRoles.ProjectOwner) throw new AccessDeniedException();
+            
+            if (roles.Find(x => x.ProjectRole == ProjectRoles.ProjectAdmin) != null) return;
+
+            if (roles.Find(x => x.ProjectRole == neededRole) == null) throw new AccessDeniedException();
+        }
+        
+        public void CheckAccess(long projectId, ProjectRoles neededRole)
+        {
+            var account = _currentAccountService.GetAccount();
+            var roles = _dbContext.ProjectAccountsRoles.Where(x => x.Project.Id == projectId && x.Account.Id == account.Id).ToList();
 
             if (roles.Find(x => x.ProjectRole == ProjectRoles.ProjectOwner) != null) return;
             if (neededRole == ProjectRoles.ProjectOwner) throw new AccessDeniedException();
