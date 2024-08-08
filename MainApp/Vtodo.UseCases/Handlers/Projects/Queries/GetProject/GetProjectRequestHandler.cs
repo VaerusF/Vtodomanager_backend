@@ -1,14 +1,10 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Text.Json;
 using AutoMapper;
-using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
@@ -22,21 +18,30 @@ namespace Vtodo.UseCases.Handlers.Projects.Queries.GetProject
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IMapper _mapper;
         private readonly IMediator _mediator;
+        private readonly IDistributedCache _distributedCache;
         
         public GetProjectRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
             IMapper mapper,
-            IMediator mediator)
+            IMediator mediator,
+            IDistributedCache distributedCache)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _mapper = mapper;
             _mediator = mediator;
+            _distributedCache = distributedCache;
         }
         
         public async Task<ProjectDto?> Handle(GetProjectRequest request, CancellationToken cancellationToken)
         {
+            _projectSecurityService.CheckAccess(request.Id, ProjectRoles.ProjectMember);
+            
+            var projectStringFromCache = await _distributedCache.GetStringAsync($"project_{request.Id}", cancellationToken);
+
+            if (projectStringFromCache != null) return JsonSerializer.Deserialize<ProjectDto>(projectStringFromCache);
+            
             var project = await _dbContext.Projects.AsNoTracking()
                 .SingleOrDefaultAsync(p => p.Id == request.Id, cancellationToken: cancellationToken);
 
@@ -45,11 +50,11 @@ namespace Vtodo.UseCases.Handlers.Projects.Queries.GetProject
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new ProjectNotFoundError() }, cancellationToken); 
                 return null;
             }
-
-            _projectSecurityService.CheckAccess(project, ProjectRoles.ProjectMember);
             
             var result = _mapper.Map<ProjectDto>(project);
             result.CreationDate = new DateTimeOffset(project.CreationDate).ToUnixTimeMilliseconds();
+
+            await _distributedCache.SetStringAsync($"project_{request.Id}", JsonSerializer.Serialize(result), cancellationToken);
 
             return result;
         }

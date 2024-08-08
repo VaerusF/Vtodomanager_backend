@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.DomainServices.Interfaces;
@@ -17,12 +18,14 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
     public class UpdateProjectRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
+        private IDistributedCache? _distributedCache = null!;
         
         [Fact]
         public async void Handle_SuccessfulUpdateProject_ReturnsTask()
         {
             SetupDbContext();
-
+            SetupDistributedCache();
+            
             var mockProjectService = SetupMockProjectService();
             mockProjectService.Setup(x => x.UpdateProject(It.IsAny<Project>(), It.IsAny<string>()))
                 .Callback((Project project, string title) =>
@@ -35,11 +38,18 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             
             var request = new UpdateProjectRequest() { Id = 1, UpdateProjectDto = updateProjectDto};
 
+            var account = _dbContext.Accounts.First();
+            
+            var currentAccountServiceMock = SetupCurrentAccountServiceMock();
+            currentAccountServiceMock.Setup(x => x.GetAccount()).Returns(account);
+            
             var updateProjectRequestHandler = new UpdateProjectRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
                 mockProjectService.Object,
-                SetupMockMediatorService().Object
+                SetupMockMediatorService().Object,
+                _distributedCache!,
+                currentAccountServiceMock.Object
             );
 
             await updateProjectRequestHandler.Handle(request, CancellationToken.None);
@@ -47,6 +57,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             mockProjectService.Verify(x => x.UpdateProject(It.IsAny<Project>(), It.IsAny<string>()), Times.Once);
             
             Assert.NotNull(_dbContext.Projects.FirstOrDefault(x => x.Id == request.Id && x.Title == updateProjectDto.Title));
+            Assert.Null(await _distributedCache!.GetStringAsync($"project_{request.Id}"));
+            Assert.Null(await _distributedCache!.GetStringAsync($"projects_by_account_{account.Id}"));
             
             CleanUp();
         }
@@ -59,15 +71,21 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             var updateProjectDto = new UpdateProjectDto() { Title = "Test update project" };
             
             var request = new UpdateProjectRequest() { Id = 2, UpdateProjectDto = updateProjectDto };
-
+            var account = _dbContext.Accounts.First();
+            
             var mediatorMock = SetupMockMediatorService();
             var error = new ProjectNotFoundError();
+            
+            var currentAccountServiceMock = SetupCurrentAccountServiceMock();
+            currentAccountServiceMock.Setup(x => x.GetAccount()).Returns(account);
             
             var updateProjectRequestHandler = new UpdateProjectRequestHandler(
                 _dbContext, 
                 SetupProjectSecurityServiceMock().Object, 
                 SetupMockProjectService().Object,
-                mediatorMock.Object
+                mediatorMock.Object,
+                _distributedCache!,
+                currentAccountServiceMock.Object
             );
 
             await updateProjectRequestHandler.Handle(request, CancellationToken.None);
@@ -76,6 +94,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
             CleanUp();
+        }
+        
+        private Mock<ICurrentAccountService> SetupCurrentAccountServiceMock()
+        {
+            var mock = new Mock<ICurrentAccountService>();
+
+            return mock;
         }
         
         private static Mock<IMediator> SetupMockMediatorService()
@@ -100,6 +125,11 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             return mock;
         }
         
+        private void SetupDistributedCache()
+        {
+            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
+        }
+        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();
@@ -114,6 +144,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
+            
+            _distributedCache = null!;
         }
     }
 }

@@ -55,6 +55,11 @@ namespace Vtodo.Web
                 options.UseNpgsql(Configuration.GetConnectionString("PgSqlConnection"),
                     x => x.MigrationsAssembly("Vtodo.DataAccess.Postgres.Migrations")));
             
+            services.AddStackExchangeRedisCache(options => {
+                options.Configuration = Configuration.GetConnectionString("RedisVtodoApp");
+                options.InstanceName = Configuration.GetConnectionString("Hostname");
+            });
+            
             services.AddAuthentication(
                 op =>
                 {

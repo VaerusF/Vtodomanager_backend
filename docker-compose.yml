@@ -22,10 +22,12 @@ services:
       - ConnectionStrings__PgSqlConnection=Server=postgres_db_dev;Port=5432;Database=vtodo;Username=vtodo_user_dev;Password=dsfsdfsdfDFSFSDFsf234123;Application Name=Vtodo;
       - ConnectionStrings__RabbitMqLogger=amqp://vtodo_logger_rabbit_user_dev:sdfgfsdjhsytjyurjyrxjhnrjsyj@rabbitmq_vtodo_logger_dev:5672
       - ConnectionStrings__RabbitMqVtodoApp=amqp://vtodo_app_rabbit_user_dev:elukeukeue7k7tke7kd7ksdfsdfsdfsdhgmmghmhg@rabbitmq_vtodo_main_web_app_dev:5674
+      - ConnectionStrings__RedisVtodoApp=redis_vtodo_main_web_app_dev:6379,abortConnect=False,password=hrehgsdfgbvsdfhbtzjht56ekj5jk5j5zcvne,user=vtodo_app_redis_user_dev
       - ProjectFilesOptions__MaxProjectFileSizeInMb=512
       - HasherOptions__KeySize=64
       - HasherOptions__Iterations=400000
       - IpListOptions__FrontClientAddress=http://127.0.0.1:3000
+      - Hostname=main_web_app_dev
       - JwtOptions__Key=aergafgdklfadmgmartehlkgnmatijhpnaijateohjatepiaphjaepih
       - JwtOptions__RefreshKey=sjstjystrjoptsrkjhsrtpjksrt0j[h345
       - JwtOptions__Issuer=http://127.0.0.1:8080
@@ -39,6 +41,9 @@ services:
         condition: service_healthy
         restart: true
       rabbitmq_vtodo_logger_dev:
+        condition: service_healthy
+        restart: true
+      redis_vtodo_main_web_app_dev:
         condition: service_healthy
         restart: true
     networks:
@@ -94,6 +99,26 @@ services:
       timeout: 60s
       retries: 5
       start_period: 60s
+  redis_vtodo_main_web_app_dev:
+    image: redis:7.4.0
+    hostname: redis_vtodo_main_web_app_dev
+    environment:
+      - REDIS_PASSWORD=dfhahadfhbahbtebteahbateatehjnmy
+      - REDIS_USER=vtodo_app_redis_user_dev
+      - REDIS_USER_PASSWORD=hrehgsdfgbvsdfhbtzjht56ekj5jk5j5zcvne
+    networks:
+      - vtodo_main_app_dev
+    restart: on-failure
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "dfhahadfhbahbtebteahbateatehjnmy", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - ./MainApp/Builds/redis_vtodo_main_web_app_dev:/var/lib/redis
+      
   vtodo_logger_service_dev:
     container_name: vtodo_logger_service_dev
     build:

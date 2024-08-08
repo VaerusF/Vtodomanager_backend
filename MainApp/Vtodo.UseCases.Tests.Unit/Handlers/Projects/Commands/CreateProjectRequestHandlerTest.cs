@@ -1,6 +1,8 @@
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using AutoMapper;
+using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -16,28 +18,38 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
     public class CreateProjectRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
-
+        private IDistributedCache? _distributedCache = null!;
+        
         [Fact]
         public async void Handle_SuccessfulCreateProject_ReturnsTaskProjectDto()
         {
             SetupDbContext();
+            SetupDistributedCache();
             
             var createProjectDto = new CreateProjectDto() { Title = "Test project create"};
             
             var request = new CreateProjectRequest() { CreateProjectDto = createProjectDto};
 
+            var account = _dbContext.Accounts.First();
+            
+            var currentAccountServiceMock = SetupCurrentAccountServiceMock();
+            currentAccountServiceMock.Setup(x => x.GetAccount()).Returns(account);
+            
             var mapper = SetupMapperMock();
             mapper.Setup(x => x.Map<Project>(It.IsAny<CreateProjectDto>())).Returns(new Project() { Title = createProjectDto.Title});
 
             var createProjectRequestHandler = new CreateProjectRequestHandler(
                 _dbContext, 
-                SetupCurrentAccountServiceMock().Object, 
+                currentAccountServiceMock.Object, 
                 SetupProjectSecurityServiceMock().Object, 
-                mapper.Object);
+                mapper.Object,
+                _distributedCache!
+            );
 
             await createProjectRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(_dbContext.Projects.FirstOrDefault(x => x.Title == createProjectDto.Title));
+            Assert.Null(await _distributedCache!.GetStringAsync($"projects_by_account_{account.Id}"));
             
             CleanUp();
         }
@@ -46,7 +58,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         private Mock<ICurrentAccountService> SetupCurrentAccountServiceMock()
         {
             var mock = new Mock<ICurrentAccountService>();
-            mock.Setup(x => x.GetAccount()).Returns(_dbContext.Accounts.First());
 
             return mock;
         }
@@ -64,6 +75,11 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             return mock;
         }
         
+        private void SetupDistributedCache()
+        {
+            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
+        }
+        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();
@@ -78,6 +94,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
+            
+            _distributedCache = null!;
         }
     }
 }

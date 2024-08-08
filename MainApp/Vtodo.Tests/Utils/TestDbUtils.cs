@@ -1,8 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Vtodo.DataAccess.Postgres;
 
 namespace Vtodo.Tests.Utils
@@ -15,6 +14,13 @@ namespace Vtodo.Tests.Utils
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
             return new AppDbContext(options);
+        }
+        
+        internal static IDistributedCache SetupTestCacheInMemory()
+        {
+            var options = Options.Create(new MemoryDistributedCacheOptions());
+            
+            return new MemoryDistributedCache(options);
         }
     }
 }
