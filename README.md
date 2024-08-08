@@ -12,6 +12,7 @@
 * Swashbuckle (Swagger);
 * AutoMapper;
 * RabbitMQ;
+* Redis;
 * Docker.
 
 ### Запуск проекта
