@@ -1,8 +1,4 @@
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
 using AutoMapper;
-using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -18,13 +14,11 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
     public class CreateProjectRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
-        private IDistributedCache? _distributedCache = null!;
         
         [Fact]
         public async void Handle_SuccessfulCreateProject_ReturnsTaskProjectDto()
         {
             SetupDbContext();
-            SetupDistributedCache();
             
             var createProjectDto = new CreateProjectDto() { Title = "Test project create"};
             
@@ -42,14 +36,12 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
                 _dbContext, 
                 currentAccountServiceMock.Object, 
                 SetupProjectSecurityServiceMock().Object, 
-                mapper.Object,
-                _distributedCache!
+                mapper.Object
             );
 
             await createProjectRequestHandler.Handle(request, CancellationToken.None);
             
             Assert.NotNull(_dbContext.Projects.FirstOrDefault(x => x.Title == createProjectDto.Title));
-            Assert.Null(await _distributedCache!.GetStringAsync($"projects_by_account_{account.Id}"));
             
             CleanUp();
         }
@@ -75,11 +67,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             return mock;
         }
         
-        private void SetupDistributedCache()
-        {
-            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
-        }
-        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();
@@ -94,8 +81,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
-            
-            _distributedCache = null!;
         }
     }
 }

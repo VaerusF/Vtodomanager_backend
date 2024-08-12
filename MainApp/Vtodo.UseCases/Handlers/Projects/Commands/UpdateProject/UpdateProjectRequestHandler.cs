@@ -15,23 +15,17 @@ namespace Vtodo.UseCases.Handlers.Projects.Commands.UpdateProject
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IProjectService _projectService;
         private readonly IMediator _mediator;
-        private readonly IDistributedCache _distributedCache;
-        private readonly ICurrentAccountService _currentAccountService;
         
         public UpdateProjectRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
             IProjectService projectService,
-            IMediator mediator,
-            IDistributedCache distributedCache,
-            ICurrentAccountService currentAccountService)
+            IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _projectService = projectService;
             _mediator = mediator;
-            _distributedCache = distributedCache;
-            _currentAccountService = currentAccountService;
         }
         
         public async Task Handle(UpdateProjectRequest request, CancellationToken cancellationToken)
@@ -51,11 +45,6 @@ namespace Vtodo.UseCases.Handlers.Projects.Commands.UpdateProject
             _projectService.UpdateProject(project, updateDto.Title);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
-            
-            var account = _currentAccountService.GetAccount();
-            
-            await _distributedCache.RemoveAsync($"projects_by_account_{account.Id}", cancellationToken);
-            await _distributedCache.RemoveAsync($"project_{request.Id}", cancellationToken);
         }
     }
 }

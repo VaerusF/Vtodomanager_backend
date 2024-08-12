@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -16,15 +15,16 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
     public class DeleteProjectRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
-        private IDistributedCache? _distributedCache = null!;
         
         [Fact]
         public async void Handle_SuccessfulDeleteProject_ReturnsTask()
         {
             SetupDbContext();
-            SetupDistributedCache();
             
             var request = new DeleteProjectRequest() { Id = 1 };
+
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
+            
             var account = _dbContext.Accounts.First();
             
             var currentAccountServiceMock = SetupCurrentAccountServiceMock();
@@ -32,17 +32,15 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             
             var deleteProjectRequestHandler = new DeleteProjectRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object, 
-                SetupMockMediatorService().Object,
-                _distributedCache!,
-                currentAccountServiceMock.Object
+                projectSecurityServiceMock.Object, 
+                SetupMockMediatorService().Object
             );
             
             await deleteProjectRequestHandler.Handle(request, CancellationToken.None);
             
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectOwner));
+            
             Assert.Null(_dbContext.Projects.FirstOrDefault(x => x.Id == request.Id));
-            Assert.Null(await _distributedCache!.GetStringAsync($"project_{request.Id}"));
-            Assert.Null(await _distributedCache!.GetStringAsync($"projects_by_account_{account.Id}"));
             
             CleanUp();
         }
@@ -53,6 +51,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             SetupDbContext();
 
             var request = new DeleteProjectRequest() { Id = 2 };
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
+            
             var account = _dbContext.Accounts.First();
             
             var mediatorMock = SetupMockMediatorService();
@@ -63,13 +64,14 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             
             var deleteProjectRequestHandler = new DeleteProjectRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object, 
-                mediatorMock.Object,
-                _distributedCache!,
-                currentAccountServiceMock.Object
+                projectSecurityServiceMock.Object, 
+                mediatorMock.Object
             );
 
             await deleteProjectRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectOwner));
+            
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
@@ -99,11 +101,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             return mock;
         }
         
-        private void SetupDistributedCache()
-        {
-            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
-        }
-        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();
@@ -118,8 +115,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
-            
-            _distributedCache = null!;
         }
     }
 }

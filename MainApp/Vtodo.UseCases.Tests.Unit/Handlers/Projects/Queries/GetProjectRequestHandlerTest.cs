@@ -1,7 +1,5 @@
-using System.Text.Json;
 using AutoMapper;
 using MediatR;
-using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
@@ -19,16 +17,14 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
     public class GetProjectRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
-        private IDistributedCache? _distributedCache = null!;
 
         [Fact]
         public async void Handle_SuccessfulGetProjectFromCache_ReturnsTaskProjectDto()
         {
             SetupDbContext();
-            SetupDistributedCache();
             
             var request = new GetProjectRequest() { Id = 1 };
-
+            
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
             var mapperMock = SetupMapperMock();
@@ -37,20 +33,12 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
                 Title = _dbContext.Projects.First(x => x.Id == request.Id).Title,
                 CreationDate = new DateTimeOffset(_dbContext.Projects.First(x => x.Id == request.Id).CreationDate).ToUnixTimeMilliseconds()
             });
-
-            await _distributedCache!.SetStringAsync($"project_{request.Id}", JsonSerializer.Serialize(new ProjectDto()
-            {
-                Title = _dbContext.Projects.First(x => x.Id == request.Id).Title,
-                CreationDate = new DateTimeOffset(_dbContext.Projects.First(x => x.Id == request.Id).CreationDate)
-                    .ToUnixTimeMilliseconds()
-            }));
             
             var getProjectRequestHandler = new GetProjectRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object, 
                 mapperMock.Object, 
-                SetupMockMediatorService().Object,
-                _distributedCache!
+                SetupMockMediatorService().Object
             );
 
             var result = await getProjectRequestHandler.Handle(request, CancellationToken.None);
@@ -65,8 +53,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
         public async void Handle_SuccessfulGetProjectFromDb_ReturnsTaskProjectDto()
         {
             SetupDbContext();
-            SetupDistributedCache();
-            
+
             var request = new GetProjectRequest() { Id = 1 };
 
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
@@ -82,15 +69,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
                 _dbContext, 
                 projectSecurityServiceMock.Object, 
                 mapperMock.Object, 
-                SetupMockMediatorService().Object,
-                _distributedCache!
+                SetupMockMediatorService().Object
             );
 
             var result = await getProjectRequestHandler.Handle(request, CancellationToken.None);
             
             projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectMember), Times.Once);
             Assert.NotNull(result);
-            Assert.NotNull(await _distributedCache!.GetStringAsync($"project_{request.Id}"));
             
             CleanUp();
         }
@@ -99,7 +84,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
         public async void Handle_ProjectNotFound_SendProjectNotFoundError()
         {
             SetupDbContext();
-            SetupDistributedCache();
             
             var request = new GetProjectRequest() { Id = 10 };
             
@@ -112,8 +96,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
                 _dbContext, 
                 projectSecurityServiceMock.Object,
                 SetupMapperMock().Object, 
-                mediatorMock.Object,
-                _distributedCache!
+                mediatorMock.Object
             );
             
             var result = await getProjectRequestHandler.Handle(request, CancellationToken.None);
@@ -147,11 +130,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
             return mock;
         }
         
-        private void SetupDistributedCache()
-        {
-            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
-        }
-        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();
@@ -166,8 +144,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
-            
-            _distributedCache = null!;
         }
     }
 }
