@@ -9,9 +9,6 @@ namespace Vtodo.UseCases.Handlers.Boards.Dto
         public string Title { get; set; } = null!;
         
         [Required]
-        public long ProjectId { get; set; }
-        
-        [Required]
         public int PrioritySort { get; set; }
     }
 }

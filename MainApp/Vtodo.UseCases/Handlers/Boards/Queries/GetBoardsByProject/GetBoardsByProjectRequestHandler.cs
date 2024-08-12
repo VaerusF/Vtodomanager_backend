@@ -1,17 +1,12 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Text.Json;
 using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Boards.Dto;
-using Vtodo.UseCases.Handlers.Errors.Commands;
-using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardsByProject
 {
@@ -21,37 +16,35 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardsByProject
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IMapper _mapper;
         private readonly IMediator _mediator;
+        private readonly IDistributedCache _distributedCache;
         
         public GetBoardsByProjectRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
             IMapper mapper,
-            IMediator mediator)
+            IMediator mediator,
+            IDistributedCache distributedCache)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _mapper = mapper;
             _mediator = mediator;
+            _distributedCache = distributedCache;
         }
         
         public async Task<List<BoardDto>?> Handle(GetBoardsByProjectRequest request, CancellationToken cancellationToken)
         {
-            var project = await _dbContext.Projects
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == request.ProjectId, cancellationToken: cancellationToken);
-            if (project == null)
-            {
-                await _mediator.Send(new SendErrorToClientRequest() { Error = new ProjectNotFoundError() }, cancellationToken); 
-                return null;
-            }
+            _projectSecurityService.CheckAccess(request.ProjectId, ProjectRoles.ProjectMember);
+            
+            var boardsListByProjectStringFromCache = await _distributedCache.GetStringAsync($"boards_by_project_{request.ProjectId}", cancellationToken);
+            
+            if (boardsListByProjectStringFromCache != null) return JsonSerializer.Deserialize<List<BoardDto>>(boardsListByProjectStringFromCache);
             
             var boards = await _dbContext.Boards
                 .Include(x => x.Project)
                 .AsNoTracking()
-                .Where(x => x.Project.Id == project.Id)
+                .Where(x => x.Project.Id == request.ProjectId)
                 .ToListAsync(cancellationToken: cancellationToken);
-            
-            _projectSecurityService.CheckAccess(project, ProjectRoles.ProjectMember);
             
             var result = _mapper.Map<List<BoardDto>>(boards);
 
@@ -60,6 +53,8 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardsByProject
                 var board = boards[i];
                 result[i].ProjectId = board.Project.Id;
             }
+            
+            await _distributedCache.SetStringAsync($"boards_by_project_{request.ProjectId}", JsonSerializer.Serialize(result), cancellationToken);
             
             return result;
         }

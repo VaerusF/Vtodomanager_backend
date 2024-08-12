@@ -9,7 +9,7 @@ using Vtodo.UseCases.Handlers.Projects.Queries.GetUserProjectList;
 
 namespace Vtodo.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/projects")]
     [ApiController]
     public class ProjectsController : ControllerBase
     {

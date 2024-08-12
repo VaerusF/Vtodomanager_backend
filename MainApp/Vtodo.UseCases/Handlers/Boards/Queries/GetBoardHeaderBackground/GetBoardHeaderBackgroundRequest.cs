@@ -5,6 +5,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardHeaderBackground
 {
     public class GetBoardHeaderBackgroundRequest : IRequest<FileStream?>
     {
-        public long Id { get; set; }
+        public long ProjectId { get; set; }
+        public long BoardId { get; set; }
     }
 }

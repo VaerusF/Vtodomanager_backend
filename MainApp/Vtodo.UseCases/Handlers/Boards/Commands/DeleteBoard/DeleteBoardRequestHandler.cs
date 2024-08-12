@@ -1,6 +1,7 @@
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
@@ -15,33 +16,40 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.DeleteBoard
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly IMediator _mediator;
+        private readonly IDistributedCache _distributedCache;
         
         public DeleteBoardRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMediator mediator)
+            IMediator mediator,
+            IDistributedCache distributedCache)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _mediator = mediator;
+            _distributedCache = distributedCache;
         }
         
         public async Task Handle(DeleteBoardRequest request, CancellationToken cancellationToken)
         {
+            _projectSecurityService.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate);
+            
             var board = await _dbContext.Boards
                 .Include(t => t.Project)
-                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == request.BoardId, cancellationToken);
+            
             if (board == null)
             {
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new BoardNotFoundError() }, cancellationToken); 
                 return;
             }
-
-            _projectSecurityService.CheckAccess(board.Project, ProjectRoles.ProjectUpdate);
             
             _dbContext.Boards.Remove(board);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
+            
+            await _distributedCache.RemoveAsync($"board_{request.BoardId}", cancellationToken);
+            await _distributedCache.RemoveAsync($"boards_by_project_{request.ProjectId}", cancellationToken);
             
             await _mediator.Send(new SendLogToLoggerRequest() { Log = new Log()
                     {

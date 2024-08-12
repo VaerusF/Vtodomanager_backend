@@ -1,10 +1,8 @@
-using System.IO;
-using System.Linq;
-using System.Threading;
 using MediatR;
+using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
-using Vtodo.Entities.Exceptions;
+using Vtodo.Entities.Enums;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -18,24 +16,32 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
     public class GetBoardHeaderBackgroundRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
-
+        private IDistributedCache? _distributedCache = null!;
+        
         [Fact]
         public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
-
-            var request = new GetBoardHeaderBackgroundRequest() {Id = 2};
+            SetupDistributedCache();
+            
+            var request = new GetBoardHeaderBackgroundRequest() { ProjectId = 1, BoardId = 2 };
             
             var mediatorMock = SetupMockMediatorService();
             var error = new BoardNotFoundError();
+
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
             var getBoardHeaderBackgroundRequestHandler = new GetBoardHeaderBackgroundRequestHandler(
                 _dbContext, 
                 SetupProjectFilesServiceMock().Object, 
-                mediatorMock.Object
+                mediatorMock.Object,
+                _distributedCache!,
+                projectSecurityServiceMock.Object
             );
 
             var result = await getBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectMember), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
@@ -53,11 +59,24 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
             return mock;
         }
         
+        private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()
+        {
+            var mock = new Mock<IProjectSecurityService>();
+            mock.Setup(x => x.CheckAccess(It.IsAny<Project>(), It.IsAny<ProjectRoles>())).Verifiable();
+            
+            return mock;
+        }
+        
         private static Mock<IMediator> SetupMockMediatorService()
         {
             var mock = new Mock<IMediator>();
             
             return mock;
+        }
+        
+        private void SetupDistributedCache()
+        {
+            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
         }
         
         private void SetupDbContext()
@@ -76,6 +95,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
+            
+            _distributedCache = null!;
         }
     }
 }

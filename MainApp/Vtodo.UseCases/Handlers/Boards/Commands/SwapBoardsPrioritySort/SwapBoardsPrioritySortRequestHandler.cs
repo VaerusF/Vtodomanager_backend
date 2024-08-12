@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
@@ -16,21 +17,26 @@ internal class SwapBoardsPrioritySortRequestHandler : IRequestHandler<SwapBoards
     private readonly IProjectSecurityService _projectSecurityService;
     private readonly IBoardService _boardService;
     private readonly IMediator _mediator;
+    private readonly IDistributedCache _distributedCache;
     
     public SwapBoardsPrioritySortRequestHandler(
         IDbContext dbContext, 
         IProjectSecurityService projectSecurityService,   
         IBoardService boardService,
-        IMediator mediator)
+        IMediator mediator,
+        IDistributedCache distributedCache)
     {
         _dbContext = dbContext;
         _projectSecurityService = projectSecurityService;
         _boardService = boardService;
         _mediator = mediator;
+        _distributedCache = distributedCache;
     }
     
     public async Task Handle(SwapBoardsPrioritySortRequest request, CancellationToken cancellationToken)
     {
+        _projectSecurityService.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate);
+        
         if (request.BoardId1 == request.BoardId2)
         {
             await _mediator.Send(new SendErrorToClientRequest() { Error = new BoardIdsEqualsIdError() }, cancellationToken); 
@@ -55,11 +61,18 @@ internal class SwapBoardsPrioritySortRequestHandler : IRequestHandler<SwapBoards
             return;
         }
         
-        _projectSecurityService.CheckAccess(board1.Project, ProjectRoles.ProjectUpdate);
-        _projectSecurityService.CheckAccess(board2.Project, ProjectRoles.ProjectUpdate);
+        if (board1.Project.Id != board2.Project.Id)
+        {
+            await _mediator.Send(new SendErrorToClientRequest() { Error = new DifferentProjectsError() }, cancellationToken); 
+            return;
+        }
         
         _boardService.SwapBoardsPrioritySort(board1, board2);
         
         await _dbContext.SaveChangesAsync(cancellationToken);
+        
+        await _distributedCache.RemoveAsync($"board_{request.BoardId1}", cancellationToken);
+        await _distributedCache.RemoveAsync($"board_{request.BoardId2}", cancellationToken);
+        await _distributedCache.RemoveAsync($"boards_by_project_{request.ProjectId}", cancellationToken);
     }
 }

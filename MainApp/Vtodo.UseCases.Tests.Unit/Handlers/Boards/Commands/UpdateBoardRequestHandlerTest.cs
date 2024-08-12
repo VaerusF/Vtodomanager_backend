@@ -1,4 +1,6 @@
+using System.Text.Json;
 using MediatR;
+using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.DomainServices.Interfaces;
@@ -17,11 +19,15 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
     public class UpdateBoardRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
-
+        private IDistributedCache? _distributedCache = null!;
+        
         [Fact]
         public async void Handle_SuccessfulUpdateBoard_ReturnsTask()
         {
             SetupDbContext();
+            SetupDistributedCache();
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
             var mockBoardService = SetupMockBoardService();
             mockBoardService.Setup(x => x.UpdateBoard(It.IsAny<Board>(), It.IsAny<string>()))
@@ -43,22 +49,50 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
                 PrioritySort = 1
             };
             
-            var request = new UpdateBoardRequest() { Id = 1, UpdateBoardDto = updateBoardDto};
+            var request = new UpdateBoardRequest() { ProjectId = 1, BoardId = 1, UpdateBoardDto = updateBoardDto};
+            
+            var board1 = _dbContext.Boards.First(x => x.Id == 1);
+            var board2 = _dbContext.Boards.First(x => x.Id == 2);
+            
+            var listDto = new List<BoardDto>()
+            {
+                new BoardDto() { 
+                    Id = _dbContext.Boards.First(x => x.Id == 1).Id,
+                    Title = _dbContext.Boards.First(x => x.Id == 1).Title,
+                    PrioritySort = _dbContext.Boards.First(x => x.Id == 1).PrioritySort,
+                    ImageHeaderPath = _dbContext.Boards.First(x => x.Id == 1).ImageHeaderPath
+                },
+                new BoardDto() {
+                    Id = _dbContext.Boards.First(x => x.Id == 2).Id, 
+                    Title = _dbContext.Boards.First(x => x.Id == 2).Title,
+                    PrioritySort = _dbContext.Boards.First(x => x.Id == 2).PrioritySort,
+                    ImageHeaderPath = _dbContext.Boards.First(x => x.Id == 2).ImageHeaderPath
+                }
+            };
+        
+            await _distributedCache!.SetStringAsync($"boards_by_project_{request.ProjectId}", JsonSerializer.Serialize(listDto));
+            await _distributedCache!.SetStringAsync($"board_{request.BoardId}", JsonSerializer.Serialize(listDto.First()));
             
             var updateBoardRequestHandler = new UpdateBoardRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityService().Object,
+                projectSecurityServiceMock.Object,
                 mockBoardService.Object,
-                SetupMockMediatorService().Object
+                SetupMockMediatorService().Object,
+                _distributedCache!
             );
             
             await updateBoardRequestHandler.Handle(request, CancellationToken.None);
             
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
+            
             mockBoardService.Verify(x => x.UpdateBoard(It.IsAny<Board>(), It.IsAny<string>()), Times.Once);
             mockBoardService.Verify(x => x.UpdateBoardPrioritySort(It.IsAny<Board>(), It.IsAny<int>()), Times.Once);
             
-            Assert.Null(_dbContext.Boards.FirstOrDefault( x => x.Id == request.Id && x.Title == "Test Board"));
-            Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Id == request.Id && x.Title == updateBoardDto.Title && x.PrioritySort == updateBoardDto.PrioritySort));
+            Assert.Null(_dbContext.Boards.FirstOrDefault( x => x.Id == request.BoardId && x.Title == "Test Board"));
+            Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Id == request.BoardId && x.Title == updateBoardDto.Title && x.PrioritySort == updateBoardDto.PrioritySort));
+            
+            Assert.Null(await _distributedCache!.GetStringAsync($"board_{request.BoardId}"));
+            Assert.Null(await _distributedCache!.GetStringAsync($"boards_by_project_{request.ProjectId}"));
             
             CleanUp();
         }
@@ -67,25 +101,32 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
+            SetupDistributedCache();
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
+            
             var updateBoardDto = new UpdateBoardDto()
             {
                 Title = "Updated Text Board",
                 PrioritySort = 1
             };
             
-            var request = new UpdateBoardRequest() { Id = 2, UpdateBoardDto = updateBoardDto};
+            var request = new UpdateBoardRequest() { ProjectId = 1, BoardId = 3, UpdateBoardDto = updateBoardDto};
             
             var mediatorMock = SetupMockMediatorService();
             var error = new BoardNotFoundError();
             
             var updateBoardRequestHandler = new UpdateBoardRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityService().Object,
+                projectSecurityServiceMock.Object,
                 SetupMockBoardService().Object,
-                mediatorMock.Object
+                mediatorMock.Object,
+                _distributedCache!
             );
             
             await updateBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
@@ -94,7 +135,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             CleanUp();
         }
         
-        private static Mock<IProjectSecurityService> SetupProjectSecurityService()
+        private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()
         {
             var mock = new Mock<IProjectSecurityService>();
             mock.Setup(x => x.CheckAccess(It.IsAny<Project>(), It.IsAny<ProjectRoles>())).Verifiable();
@@ -116,6 +157,11 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             return mock;
         }
         
+        private void SetupDistributedCache()
+        {
+            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
+        }
+        
         private void SetupDbContext()
         {
             _dbContext = TestDbUtils.SetupTestDbContextInMemory();
@@ -125,6 +171,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             _dbContext.SaveChanges();
             
             _dbContext.Boards.Add(new Board() {Title = "Test Board", PrioritySort = 0, Project = _dbContext.Projects.First()});
+            _dbContext.Boards.Add(new Board() {Title = "Test Board2", PrioritySort = 0, Project = _dbContext.Projects.First()});
             _dbContext.SaveChanges();
         }
         
@@ -132,6 +179,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
+            
+            _distributedCache = null!;
         }
     }
 }
