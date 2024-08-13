@@ -23,15 +23,15 @@ namespace Vtodo.Controllers
         /// <summary>
         /// Get project by id
         /// </summary>
-        /// <param name="id">Project id</param>
+        /// <param name="projectId">Project id</param>
         /// <response code="200">Returns project dto</response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
-        [HttpGet("{id:long}")]
-        public async Task<ActionResult<ProjectDto>> Get(long id)
+        [HttpGet("{projectId:long}")]
+        public async Task<ActionResult<ProjectDto>> Get(long projectId)
         {
-           return await _mediator.Send(new GetProjectRequest() { Id = id});
+           return await _mediator.Send(new GetProjectRequest() { Id = projectId});
         }
         
         /// <summary>
@@ -64,30 +64,30 @@ namespace Vtodo.Controllers
         /// <summary>
         /// Update project
         /// </summary>
-        /// <param name="id">Project id</param>
+        /// <param name="projectId">Project id</param>
         /// <param name="updateProjectDto">Update board Dto</param>
         /// <response code="200"></response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
-        [HttpPut("{id:long}")]
-        public async Task Update(long id, [FromBody] UpdateProjectDto updateProjectDto)
+        [HttpPut("{projectId:long}")]
+        public async Task Update(long projectId, [FromBody] UpdateProjectDto updateProjectDto)
         {
-            await _mediator.Send(new UpdateProjectRequest() { Id = id, UpdateProjectDto = updateProjectDto});
+            await _mediator.Send(new UpdateProjectRequest() { Id = projectId, UpdateProjectDto = updateProjectDto});
         }
         
         /// <summary>
         /// Delete project
         /// </summary>
-        /// <param name="id">Project id</param>
+        /// <param name="projectId">Project id</param>
         /// <response code="200"></response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Project not found</response>
-        [HttpDelete("{id:long}")]
-        public async Task Delete(long id)
+        [HttpDelete("{projectId:long}")]
+        public async Task Delete(long projectId)
         {
-            await _mediator.Send(new DeleteProjectRequest { Id = id});
+            await _mediator.Send(new DeleteProjectRequest { Id = projectId});
         }
     }
 }

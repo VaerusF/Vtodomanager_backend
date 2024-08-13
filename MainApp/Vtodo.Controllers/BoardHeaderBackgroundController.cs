@@ -7,7 +7,7 @@ using Vtodo.UseCases.Handlers.Boards.Queries.GetBoardHeaderBackground;
 
 namespace Vtodo.Controllers;
 
-[Route("api/v1/projects/{projectId:long}/boards/{boardId:long}")]
+[Route("api/v1/projects/{projectId:long}/boards/{boardId:long}/header_background")]
 [ApiController]
 public class BoardHeaderBackgroundController : ControllerBase
 {
@@ -29,7 +29,7 @@ public class BoardHeaderBackgroundController : ControllerBase
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
         /// <response code="500">File not found</response>
-        [HttpGet("header_background")]
+        [HttpGet("")]
         public async Task<ActionResult<FileStream?>> GetBoardHeaderBackground(long projectId, long boardId)
         {
             var file = await _mediator.Send(new GetBoardHeaderBackgroundRequest() { ProjectId = projectId, BoardId = boardId});
@@ -48,7 +48,7 @@ public class BoardHeaderBackgroundController : ControllerBase
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
-        [HttpPut("header_background")]
+        [HttpPut("")]
         public async Task UploadBoardHeaderBackground(long boardId, IFormFile uploadBoardHeaderBackground, long projectId)
         {
             await _mediator.Send(new UploadBoardHeaderBackgroundRequest ()
@@ -70,7 +70,7 @@ public class BoardHeaderBackgroundController : ControllerBase
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
-        [HttpPut("delete_header_background")]
+        [HttpDelete("")]
         public async Task DeleteBoardHeaderBackground(long boardId, long projectId)
         {
             await _mediator.Send(new DeleteBoardHeaderBackgroundRequest () { ProjectId = projectId, BoardId = boardId});
