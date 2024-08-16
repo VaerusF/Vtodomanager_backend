@@ -92,8 +92,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
 
             await moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.NewProjectId, ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.NewProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             mockBoardService.Verify(x => x.MoveBoardToAnotherProject(It.IsAny<Board>(), It.IsAny<Project>()), Times.Once);
             
@@ -129,8 +129,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
 
             await moveBoardToAnotherProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.NewProjectId, ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.NewProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
@@ -165,8 +165,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
                         y.Error.GetType() == error.GetType()), 
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
 
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.NewProjectId, ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.NewProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             CleanUp();
         }

@@ -73,7 +73,7 @@ public class SwapBoardsPrioritySortRequestHandlerTest
 
         await swapBoardsPrioritySortRequestHandler.Handle(request, CancellationToken.None);
             
-        projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
+        projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
         
         mockBoardService.Verify(x => x.SwapBoardsPrioritySort(It.IsAny<Board>(), It.IsAny<Board>()), Times.Once);
             
@@ -109,7 +109,7 @@ public class SwapBoardsPrioritySortRequestHandlerTest
             
         await swapBoardsPrioritySortRequestHandler.Handle(request, CancellationToken.None);
         
-        projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
+        projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
         
         mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                     y.Error.GetType() == error.GetType()), 
@@ -140,7 +140,7 @@ public class SwapBoardsPrioritySortRequestHandlerTest
             
         await swapBoardsPrioritySortRequestHandler.Handle(request, CancellationToken.None);
         
-        projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
+        projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
         
         mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                     y.Error.GetType() == error.GetType()), 
@@ -171,7 +171,7 @@ public class SwapBoardsPrioritySortRequestHandlerTest
             
         await swapBoardsPrioritySortRequestHandler.Handle(request, CancellationToken.None);
         
-        projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate), Times.Once);
+        projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
         
         mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                     y.Error.GetType() == error.GetType()), 

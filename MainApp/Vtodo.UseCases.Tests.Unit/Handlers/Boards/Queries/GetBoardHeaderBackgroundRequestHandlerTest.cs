@@ -41,7 +41,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
 
             var result = await getBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 

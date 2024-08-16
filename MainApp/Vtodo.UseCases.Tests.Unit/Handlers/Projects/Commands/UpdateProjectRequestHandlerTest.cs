@@ -51,7 +51,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
 
             await updateProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectUpdate));
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.Id), ProjectRoles.ProjectUpdate), Times.Once);
             
             mockProjectService.Verify(x => x.UpdateProject(It.IsAny<Project>(), It.IsAny<string>()), Times.Once);
             
@@ -88,7 +88,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
 
             await updateProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectUpdate));
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.Id), ProjectRoles.ProjectUpdate), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 

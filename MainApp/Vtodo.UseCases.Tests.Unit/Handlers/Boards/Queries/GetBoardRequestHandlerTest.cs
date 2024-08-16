@@ -55,7 +55,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
 
             var result = await getBoardRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
             
             Assert.NotNull(result);
             Assert.NotNull(await _distributedCache!.GetStringAsync($"board_{request.BoardId}"));
@@ -93,7 +93,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
 
             var result = await getBoardRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
             
             Assert.NotNull(result);
             Assert.NotNull(await _distributedCache!.GetStringAsync($"board_{request.BoardId}"));
@@ -124,7 +124,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
             
             var result = await getBoardRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 

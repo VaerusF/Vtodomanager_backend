@@ -38,7 +38,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
             
             await deleteProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectOwner));
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.Id), ProjectRoles.ProjectOwner), Times.Once);
             
             Assert.Null(_dbContext.Projects.FirstOrDefault(x => x.Id == request.Id));
             
@@ -70,7 +70,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
 
             await deleteProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectOwner));
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.Id), ProjectRoles.ProjectOwner), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 

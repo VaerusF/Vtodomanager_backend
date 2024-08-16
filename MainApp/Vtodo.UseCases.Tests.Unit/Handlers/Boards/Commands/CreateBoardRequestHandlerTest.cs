@@ -66,7 +66,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             await createBoardRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Title == createBoardDto.Title));
             Assert.Null(await _distributedCache!.GetStringAsync($"boards_by_project_{request.ProjectId}"));
@@ -101,7 +101,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             await createBoardRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 

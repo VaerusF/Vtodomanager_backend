@@ -43,7 +43,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
 
             var result = await getProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.Id), ProjectRoles.ProjectMember), Times.Once);
+            
             Assert.NotNull(result);
             
             CleanUp();
@@ -74,7 +75,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
 
             var result = await getProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.Id), ProjectRoles.ProjectMember), Times.Once);
+            
             Assert.NotNull(result);
             
             CleanUp();
@@ -104,7 +106,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
                         y.Error.GetType() == error.GetType()), 
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.Id), ProjectRoles.ProjectMember), Times.Once);
+            
             Assert.Null(result);
             
             CleanUp();

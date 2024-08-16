@@ -10,8 +10,6 @@ using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
 using Vtodo.UseCases.Handlers.Boards.Dto;
 using Vtodo.UseCases.Handlers.Boards.Queries.GetBoardsByProject;
-using Vtodo.UseCases.Handlers.Errors.Commands;
-using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
@@ -65,7 +63,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
 
             var result = await getBoardsByProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
             
             Assert.NotNull(result);
             Assert.Equal(2, result.Count);
@@ -110,7 +108,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
 
             var result = await getBoardsByProjectRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(request.ProjectId, ProjectRoles.ProjectMember), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
             
             Assert.NotNull(result);
             Assert.Equal(2, result.Count);

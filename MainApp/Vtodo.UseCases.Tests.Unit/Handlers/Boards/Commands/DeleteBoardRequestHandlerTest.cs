@@ -63,7 +63,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             await deleteBoardRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             Assert.Null(_dbContext.Boards.FirstOrDefault(x => x.Id == 1));
             
@@ -95,7 +95,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             await deleteBoardRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 

@@ -88,7 +88,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             await deleteBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             mockBoardService.Verify(x => x.UpdateImageHeaderPath(It.IsAny<Board>(), 
                     It.IsAny<string?>()), Times.Once
@@ -130,7 +130,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             await deleteBoardHeaderBackgroundRequestHandler.Handle(request, CancellationToken.None);
             
-            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsAny<long>(), ProjectRoles.ProjectUpdate), Times.Once);
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
