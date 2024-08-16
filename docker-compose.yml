@@ -73,7 +73,7 @@ services:
     volumes: 
       - vtodo_postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U vtodo -d vtodo"]
+      test: [ "CMD-SHELL", "pg_isready -U vtodo_user_dev -d vtodo"]
       interval: 30s
       timeout: 60s
       retries: 5
@@ -166,7 +166,7 @@ services:
     volumes:
       - vtodo_logger_postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U vtodo_logger -d vtodo_logger"]
+      test: [ "CMD-SHELL", "pg_isready -U vtodo_logger_user_dev -d vtodo_logger"]
       interval: 30s
       timeout: 60s
       retries: 5
