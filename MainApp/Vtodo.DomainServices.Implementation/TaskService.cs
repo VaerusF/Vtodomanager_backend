@@ -7,21 +7,35 @@ namespace Vtodo.DomainServices.Implementation;
 
 internal class TaskService : ITaskService
 {
+    public TaskM CreateTask(string title, string description, Board board, bool isCompleted = false, 
+        int? endDateTimeStamp = null, TaskPriority priority = TaskPriority.None, TaskM? newParentTaskM = null)
+    {
+        var task = new TaskM()
+        {
+            Title = title,
+            Description = description,
+            Priority = priority,
+            PrioritySort = 0,
+            EndDate = endDateTimeStamp == null
+                ? null
+                : DateTimeOffset.FromUnixTimeSeconds((int)endDateTimeStamp).DateTime,
+            IsCompleted = isCompleted,
+            Board = board,
+            ParentTask = newParentTaskM
+        };
+
+        return task;
+    }
+
     public void UpdateTask(TaskM task, string title, string description, bool isCompleted, int? endDateTimeStamp, 
         TaskPriority priority)
     {
         task.Title = title;
         task.Description = description;
         task.IsCompleted = isCompleted;
-        if (endDateTimeStamp == null)
-        {
-            task.EndDate = null;
-        }
-        else
-        {
-            task.EndDate = DateTimeOffset.FromUnixTimeSeconds((int) endDateTimeStamp).DateTime;
-        }
-
+        task.EndDate = endDateTimeStamp == null
+            ? null
+            : DateTimeOffset.FromUnixTimeSeconds((int)endDateTimeStamp).DateTime;
         task.Priority = priority;
     }
 

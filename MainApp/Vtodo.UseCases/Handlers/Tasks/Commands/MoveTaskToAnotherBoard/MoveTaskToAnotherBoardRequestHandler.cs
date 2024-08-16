@@ -1,6 +1,7 @@
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Models;
@@ -17,21 +18,26 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly ITaskService _taskService;
         private readonly IMediator _mediator;
-
+        private readonly IDistributedCache _distributedCache;
+        
         public MoveTaskToAnotherBoardRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
             ITaskService taskService,
-            IMediator mediator)
+            IMediator mediator,
+            IDistributedCache distributedCache)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _taskService = taskService;
             _mediator = mediator;
+            _distributedCache = distributedCache;
         }
         
         public async Task Handle(MoveTaskToAnotherBoardRequest request, CancellationToken cancellationToken)
         {
+            _projectSecurityService.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate);
+            
             var newBoard = await _dbContext.Boards
                 .Include(x => x.Project)
                 .FirstOrDefaultAsync(x => x.Id == request.NewBoardId, cancellationToken: cancellationToken);
@@ -41,6 +47,8 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard
                 return;
             }
 
+            _projectSecurityService.CheckAccess(newBoard.Project.Id, ProjectRoles.ProjectUpdate);
+            
             var rootTask = _dbContext.Tasks
                 .Include(t => t.Board)
                 .Include(t => t.Board.Project)
@@ -52,9 +60,6 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new TaskNotFoundError() }, cancellationToken); 
                 return;
             }
-            
-            _projectSecurityService.CheckAccess(rootTask.Board.Project, ProjectRoles.ProjectUpdate);
-            _projectSecurityService.CheckAccess(newBoard.Project, ProjectRoles.ProjectUpdate);
 
             if (rootTask.Board.Id == newBoard.Id)
             {
@@ -83,6 +88,10 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard
             _taskService.MoveAllTaskFromListToAnotherBoard(tasksList, newBoard);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
+            
+            await _distributedCache.RemoveAsync($"task_{request.TaskId}", cancellationToken);
+            await _distributedCache.RemoveAsync($"tasks_by_board_{request.BoardId}", cancellationToken);
+            await _distributedCache.RemoveAsync($"tasks_by_board_{request.NewBoardId}", cancellationToken);
         }
         
     }

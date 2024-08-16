@@ -182,7 +182,7 @@
             <summary>
             Get project by id
             </summary>
-            <param name="id">Project id</param>
+            <param name="projectId">Project id</param>
             <response code="200">Returns project dto</response>
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>
@@ -211,7 +211,7 @@
             <summary>
             Update project
             </summary>
-            <param name="id">Project id</param>
+            <param name="projectId">Project id</param>
             <param name="updateProjectDto">Update board Dto</param>
             <response code="200"></response>
             <response code="401">Unauthorized</response>
@@ -222,7 +222,7 @@
             <summary>
             Delete project
             </summary>
-            <param name="id">Project id</param>
+            <param name="projectId">Project id</param>
             <response code="200"></response>
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>
@@ -232,7 +232,7 @@
             <summary>
             Grant role (One of ProjectAdmin, ProjectUpdate)
             </summary>
-            <param name="id">Project id</param>
+            <param name="projectId">Project id</param>
             <param name="role">Grant role Dto</param>
             <response code="200"></response>
             <response code="400">Account not a member in project</response>
@@ -247,7 +247,7 @@
             <summary>
             Revoke role (One of ProjectAdmin, ProjectUpdate, ProjectMember)
             </summary>
-            <param name="id">Project id</param>
+            <param name="projectId">Project id</param>
             <param name="role">Revoke role Dto</param>
             <response code="200"></response>
             <response code="400">Account is not a member in project</response>
@@ -262,7 +262,7 @@
             <summary>
             Revoke all roles (Kick member) 
             </summary>
-            <param name="id">Project id</param>
+            <param name="projectId">Project id</param>
             <param name="role">Kick member Dto</param>
             <response code="200"></response>
             <response code="400">Account already has this role</response>
@@ -276,7 +276,7 @@
             <summary>
             Grant member role to account
             </summary>
-            <param name="id">Project id</param>
+            <param name="projectId">Project id</param>
             <param name="addMemberDto">Add member Dto</param>
             <response code="200"></response>
             <response code="400">Account already has this role</response>
@@ -289,7 +289,7 @@
             <summary>
             Change project owner
             </summary>
-            <param name="id">Project id</param>
+            <param name="projectId">Project id</param>
             <param name="changeOwnerDto">Change owner Dto</param>
             <response code="200"></response>
             <response code="400">Account is not a member in project</response>
@@ -299,31 +299,36 @@
             <response code="404">Project not found</response>
             <response code="404">Account not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.Get(System.Int64)">
+        <member name="M:Vtodo.Controllers.TasksController.Get(System.Int64,System.Int64,System.Int64)">
             <summary>
             Get task by id
             </summary>
-            <param name="id">Task id</param>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
+            <param name="taskId">Task id</param>
             <response code="200">Returns task dto</response>
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>
             <response code="404">task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.GetByTask(System.Int64)">
+        <member name="M:Vtodo.Controllers.TasksController.GetByTask(System.Int64,System.Int64)">
             <summary>
             Get list of tasks by board
             </summary>
-            <param name="id">Board id</param>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
             <response code="200">Returns list of task dto</response>
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>
             <response code="404">Board not found</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.Create(Vtodo.UseCases.Handlers.Tasks.Dto.CreateTaskDto)">
+        <member name="M:Vtodo.Controllers.TasksController.Create(System.Int64,System.Int64,Vtodo.UseCases.Handlers.Tasks.Dto.CreateTaskDto)">
             <summary>
             Create a task
             </summary>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
             <param name="createTaskDto">Task dto</param>
             <response code="200"></response>
             <response code="401">Unauthorized</response>
@@ -331,33 +336,39 @@
             <response code="404">Board not found</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.Update(System.Int64,Vtodo.UseCases.Handlers.Tasks.Dto.UpdateTaskDto)">
+        <member name="M:Vtodo.Controllers.TasksController.Update(System.Int64,System.Int64,System.Int64,Vtodo.UseCases.Handlers.Tasks.Dto.UpdateTaskDto)">
             <summary>
             Update task
             </summary>
-            <param name="id">Task id</param>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
+            <param name="taskId">Task id</param>
             <param name="updateTaskDto">Task dto</param>
             <response code="200"></response>
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.MoveToRoot(System.Int64)">
+        <member name="M:Vtodo.Controllers.TasksController.MoveToRoot(System.Int64,System.Int64,System.Int64)">
             <summary>
             Move task to root in board
             </summary>
-            <param name="id">Task id</param>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
+            <param name="taskId">Task id</param>
             <response code="200"></response>
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.MoveToTask(System.Int64,System.Int64)">
+        <member name="M:Vtodo.Controllers.TasksController.MoveToTask(System.Int64,System.Int64,System.Int64,System.Int64)">
             <summary>
             Move task to another task as children
             </summary>
-            <param name="id">Task id</param>
-            <param name="parentId">Parent task id</param>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
+            <param name="taskId">Task id</param>
+            <param name="parentTaskId">Parent task id</param>
             <response code="200"></response>
             <response code="400">New parent task id should not be equal to task id (Attempt to use self as parent)</response>
             <response code="400">New parent task id should not be equal to old parent task id (Attempt to change parent task to same parent)</response>
@@ -365,12 +376,14 @@
             <response code="403">Access denied</response>
             <response code="404">Task not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.MoveToBoard(System.Int64,System.Int64)">
+        <member name="M:Vtodo.Controllers.TasksController.MoveToBoard(System.Int64,System.Int64,System.Int64,System.Int64)">
             <summary>
             Move task to another board
             </summary>
-            <param name="id">Task id</param>
+            <param name="projectId">Project id</param>
             <param name="boardId">Board id</param>
+            <param name="taskId">Task id</param>
+            <param name="newBoardId">Board id</param>
             <response code="200"></response>
             <response code="400">New board id should not be equal to old board id (Attempt to change board to same board)</response>
             <response code="401">Unauthorized</response>
@@ -378,11 +391,13 @@
             <response code="404">Task not found</response>
             <response code="404">Board not found</response>
         </member>
-        <member name="M:Vtodo.Controllers.TasksController.Delete(System.Int64)">
+        <member name="M:Vtodo.Controllers.TasksController.Delete(System.Int64,System.Int64,System.Int64)">
             <summary>
             Delete task
             </summary>
-            <param name="id">Task id</param>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
+            <param name="taskId">Task id</param>
             <response code="200"></response>
             <response code="401">Unauthorized</response>
             <response code="403">Access denied</response>

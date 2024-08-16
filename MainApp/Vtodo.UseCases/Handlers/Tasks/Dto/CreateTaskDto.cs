@@ -13,9 +13,6 @@ namespace Vtodo.UseCases.Handlers.Tasks.Dto
         [Required]
         public string Description { get; set; } = string.Empty;
         
-        [Required]
-        public long BoardId { get; set; }
-        
         public long? ParentTaskId { get; set; }
         
         [Required]

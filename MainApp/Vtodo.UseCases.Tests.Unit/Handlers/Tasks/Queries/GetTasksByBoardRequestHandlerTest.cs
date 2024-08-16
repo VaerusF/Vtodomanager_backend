@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using AutoMapper;
+using System.Text.Json;
 using MediatR;
+using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -21,55 +18,97 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
     public class GetTasksByBoardRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
+        private IDistributedCache? _distributedCache = null!;
         
         [Fact]
-        public async void Handle_SuccessfulGetTasksByBoard_ReturnsSystemTaskListTaskDto()
+        public async void Handle_SuccessfulGetTasksByBoardFromCache_ReturnsSystemTaskListTaskDto()
         {
             SetupDbContext();
-
+            SetupDistributedCache();
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
+            
             var request = new GetTasksByBoardRequest() { BoardId = 1};
-
-            var mapperMock = SetupMapperMock();
+            
             
             var testTask1 = _dbContext.Tasks.First(x => x.Id == 1);
             var testTask2 = _dbContext.Tasks.First(x => x.Id == 2);
             var testTask3 = _dbContext.Tasks.First(x => x.Id == 3);
-            
-            mapperMock.Setup(x => x.Map<List<TaskDto>>(It.IsAny<List<TaskM>>())).Returns(new List<TaskDto>()
+
+            var listDto = new List<TaskDto>()
             {
-                new TaskDto() {
+                new TaskDto()
+                {
                     Id = testTask1.Id,
                     Title = testTask1.Title,
                     PrioritySort = testTask1.PrioritySort,
                     IsCompleted = testTask1.IsCompleted,
                     ImageHeaderPath = testTask1.ImageHeaderPath
                 },
-                new TaskDto() {
+                new TaskDto()
+                {
                     Id = testTask2.Id,
                     Title = testTask2.Title,
                     PrioritySort = testTask2.PrioritySort,
                     IsCompleted = testTask2.IsCompleted,
                     ImageHeaderPath = testTask2.ImageHeaderPath
                 },
-                new TaskDto() {
+                new TaskDto()
+                {
                     Id = testTask3.Id,
                     Title = testTask3.Title,
                     PrioritySort = testTask3.PrioritySort,
                     IsCompleted = testTask3.IsCompleted,
                     ImageHeaderPath = testTask3.ImageHeaderPath
                 },
-            });
+            };
+            
+            await _distributedCache!.SetStringAsync($"tasks_by_board_{request.BoardId}", JsonSerializer.Serialize(listDto));
             
             var getTasksByBoardRequestHandler = new GetTasksByBoardRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object, 
-                mapperMock.Object,
-                SetupMockMediatorService().Object);
+                projectSecurityServiceMock.Object, 
+                SetupMockMediatorService().Object,
+                _distributedCache!
+            );
 
             var result = await getTasksByBoardRequestHandler.Handle(request, CancellationToken.None);
             
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
+            
             Assert.NotNull(result);
             Assert.Equal(3, result.Count);
+            
+            Assert.NotNull(await _distributedCache!.GetStringAsync($"tasks_by_board_{request.BoardId}"));
+            
+            CleanUp();
+        }
+        
+        [Fact]
+        public async void Handle_SuccessfulGetTasksByBoardFromDb_ReturnsSystemTaskListTaskDto()
+        {
+            SetupDbContext();
+            SetupDistributedCache();
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
+            
+            var request = new GetTasksByBoardRequest() { BoardId = 1};
+            
+            var getTasksByBoardRequestHandler = new GetTasksByBoardRequestHandler(
+                _dbContext, 
+                projectSecurityServiceMock.Object, 
+                SetupMockMediatorService().Object,
+                _distributedCache!
+            );
+
+            var result = await getTasksByBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
+            
+            Assert.NotNull(result);
+            Assert.Equal(3, result.Count);
+            
+            Assert.NotNull(await _distributedCache!.GetStringAsync($"tasks_by_board_{request.BoardId}"));
             
             CleanUp();
         }
@@ -78,6 +117,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
         public async void Handle_BoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
+            SetupDistributedCache();
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
 
             var request = new GetTasksByBoardRequest() { BoardId = 3};
             
@@ -86,11 +128,15 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
             
             var getTasksByBoardRequestHandler = new GetTasksByBoardRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object,
-                SetupMapperMock().Object,
-                mediatorMock.Object);
+                projectSecurityServiceMock.Object,
+                mediatorMock.Object,
+                _distributedCache!
+            );
             
             var result = await getTasksByBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
+            
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
@@ -114,9 +160,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
             return mock;
         }
 
-        private static Mock<IMapper> SetupMapperMock()
+        private void SetupDistributedCache()
         {
-            return new Mock<IMapper>();
+            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
         }
         
         private void SetupDbContext()
@@ -162,6 +208,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
+            
+            _distributedCache = null!;
         }
     }
 }

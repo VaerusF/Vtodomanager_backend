@@ -5,9 +5,10 @@ namespace Vtodo.DomainServices.Interfaces;
 
 internal interface ITaskService
 {
-    void UpdateTask(TaskM task, string title, string description, 
+    TaskM CreateTask(string title, string description, Board board, bool isCompleted = false, 
+        int? endDateTimeStamp = null, TaskPriority priority = TaskPriority.None, TaskM? newParentTaskM = null);
+    void UpdateTask(TaskM task, string title, string description,
         bool isCompleted, int? endDateTimeStamp, TaskPriority priority);
-
     void MoveTaskToRoot(TaskM task);
     void MoveTaskToAnotherTask(TaskM task, TaskM newParentTask);
     void MoveAllTaskFromListToAnotherBoard(List<TaskM> tasksList, Board newBoard);

@@ -16,7 +16,6 @@ using Vtodo.UseCases.Handlers.Accounts.Mappings;
 using Vtodo.UseCases.Handlers.Boards.Mappings;
 using Vtodo.UseCases.Handlers.Projects.Mappings;
 using Vtodo.UseCases.Handlers.Projects.Queries.GetProject;
-using Vtodo.UseCases.Handlers.Tasks.Mappings;
 using Vtodo.Web.Utils;
 
 namespace Vtodo.Web
@@ -35,7 +34,6 @@ namespace Vtodo.Web
             {
                 cfg.AddProfile(typeof(ProjectsAutoMapperProfile));
                 cfg.AddProfile(typeof(BoardsAutoMapperProfile));
-                cfg.AddProfile(typeof(TasksAutoMapperProfile));
                 cfg.AddProfile(typeof(AccountsAutoMapperProfile));
             });
             

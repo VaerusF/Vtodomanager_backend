@@ -1,13 +1,10 @@
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -22,35 +19,73 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
     public class GetTaskRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
+        private IDistributedCache? _distributedCache = null!;
 
         [Fact]
-        public async void Handle_SuccessfulGetTask_ReturnSystemTaskTaskDto()
+        public async void Handle_SuccessfulGetTaskFromCache_ReturnSystemTaskTaskDto()
         {
             SetupDbContext();
+            SetupDistributedCache();
             
-            var request = new GetTaskRequest() { Id = 1 };
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
-            var testTask = _dbContext.Tasks.Include(x => x.Board).First(x => x.Id == request.Id);
-            var mapperMock = SetupMapperMock();
+            var request = new GetTaskRequest() { ProjectId = 1, TaskId = 1 };
+            
+            var testTask = _dbContext.Tasks.Include(x => x.Board).First(x => x.Id == request.TaskId);
 
-            mapperMock.Setup(x => x.Map<TaskDto>(It.IsAny<TaskM>())).Returns(new TaskDto()
+            var dto = new TaskDto()
             {
+                Id = testTask.Id,
                 Title = testTask.Title,
-                Description = testTask.Description,
-                Priority = testTask.PrioritySort,
                 PrioritySort = testTask.PrioritySort,
-                BoardId = testTask.Board.Id,
-            });
+                IsCompleted = testTask.IsCompleted,
+                ImageHeaderPath = testTask.ImageHeaderPath
+            };
+            
+            await _distributedCache!.SetStringAsync($"task_{request.TaskId}", JsonSerializer.Serialize(dto));
             
             var getTaskRequestHandler = new GetTaskRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object, 
-                mapperMock.Object,
-                SetupMockMediatorService().Object);
+                projectSecurityServiceMock.Object, 
+                SetupMockMediatorService().Object,
+                _distributedCache!
+            );
 
             var result = await getTaskRequestHandler.Handle(request, CancellationToken.None);
             
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
+            
             Assert.NotNull(result);
+            Assert.NotNull(await _distributedCache!.GetStringAsync($"task_{request.TaskId}"));
+            
+            CleanUp();
+        }
+        
+        [Fact]
+        public async void Handle_SuccessfulGetTaskFromDb_ReturnSystemTaskTaskDto()
+        {
+            SetupDbContext();
+            SetupDistributedCache();
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
+            
+            var request = new GetTaskRequest() { ProjectId = 1, TaskId = 1 };
+            
+            var testTask = _dbContext.Tasks.Include(x => x.Board).First(x => x.Id == request.TaskId);
+            
+            var getTaskRequestHandler = new GetTaskRequestHandler(
+                _dbContext, 
+                projectSecurityServiceMock.Object, 
+                SetupMockMediatorService().Object,
+                _distributedCache!
+            );
+
+            var result = await getTaskRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
+            
+            Assert.NotNull(result);
+            Assert.NotNull(await _distributedCache!.GetStringAsync($"task_{request.TaskId}"));
             
             CleanUp();
         }
@@ -59,21 +94,25 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
         public async void Handle_TaskNotFound_SendTaskNotFoundError()
         {
             SetupDbContext();
+            SetupDistributedCache();
             
-            var request = new GetTaskRequest() { Id = 100 };
-            var mapperMock = SetupMapperMock();
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
+            
+            var request = new GetTaskRequest() { ProjectId = 1, TaskId = 100 };
             
             var mediatorMock = SetupMockMediatorService();
             var error = new TaskNotFoundError();
             
             var getTaskRequestHandler = new GetTaskRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object, 
-                mapperMock.Object,
-                mediatorMock.Object
+                projectSecurityServiceMock.Object,
+                mediatorMock.Object,
+                _distributedCache!
             );
 
             var result = await getTaskRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectMember), Times.Once);
             
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
@@ -97,10 +136,10 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
             
             return mock;
         }
-
-        private static Mock<IMapper> SetupMapperMock()
+        
+        private void SetupDistributedCache()
         {
-            return new Mock<IMapper>();
+            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
         }
         
         private void SetupDbContext()
@@ -128,6 +167,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Queries
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
+            
+            _distributedCache = null!;
         }
     }
 }

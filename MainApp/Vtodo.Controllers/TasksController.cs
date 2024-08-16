@@ -12,7 +12,7 @@ using Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard;
 
 namespace Vtodo.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/projects/{projectId:long}/boards/{boardId:long}/tasks")]
     [ApiController]
     public class TasksController : ControllerBase
     {
@@ -26,35 +26,40 @@ namespace Vtodo.Controllers
         /// <summary>
         /// Get task by id
         /// </summary>
-        /// <param name="id">Task id</param>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
+        /// <param name="taskId">Task id</param>
         /// <response code="200">Returns task dto</response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">task not found</response>
-        [HttpGet("{id:long}")]
-        public async Task<ActionResult<TaskDto>> Get(long id)
+        [HttpGet("{taskId:long}")]
+        public async Task<ActionResult<TaskDto>> Get(long projectId, long boardId, long taskId)
         {
-            return await _mediator.Send(new GetTaskRequest() { Id = id});
+            return await _mediator.Send(new GetTaskRequest() { ProjectId = projectId, TaskId = taskId});
         }
         
         /// <summary>
         /// Get list of tasks by board
         /// </summary>
-        /// <param name="id">Board id</param>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
         /// <response code="200">Returns list of task dto</response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
         /// <response code="404">Task not found</response>
-        [HttpGet("by_board/{id:long}")]
-        public async Task<ActionResult<List<TaskDto>>> GetByTask(long id)
+        [HttpGet("by_board/")]
+        public async Task<ActionResult<List<TaskDto>>> GetByTask(long projectId, long boardId)
         {
-            return await _mediator.Send(new GetTasksByBoardRequest() { BoardId = id});
+            return await _mediator.Send(new GetTasksByBoardRequest() {ProjectId = projectId, BoardId = boardId});
         }
         
         /// <summary>
         /// Create a task
         /// </summary>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
         /// <param name="createTaskDto">Task dto</param>
         /// <response code="200"></response>
         /// <response code="401">Unauthorized</response>
@@ -62,87 +67,119 @@ namespace Vtodo.Controllers
         /// <response code="404">Board not found</response>
         /// <response code="404">Task not found</response>
         [HttpPost()]
-        public async Task Create([FromBody] CreateTaskDto createTaskDto)
+        public async Task Create(long projectId, long boardId, [FromBody] CreateTaskDto createTaskDto)
         {
-            await _mediator.Send(new CreateTaskRequest() { CreateTaskDto = createTaskDto});
+            await _mediator.Send(new CreateTaskRequest()
+            {
+                ProjectId = projectId, 
+                BoardId = boardId, 
+                CreateTaskDto = createTaskDto
+            });
         }
         
         /// <summary>
         /// Update task
         /// </summary>
-        /// <param name="id">Task id</param>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
+        /// <param name="taskId">Task id</param>
         /// <param name="updateTaskDto">Task dto</param>
         /// <response code="200"></response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
-        [HttpPut("{id:long}")]
-        public async Task Update(long id, [FromBody] UpdateTaskDto updateTaskDto)
+        [HttpPut("{taskId:long}")]
+        public async Task Update(long projectId, long boardId, long taskId, [FromBody] UpdateTaskDto updateTaskDto)
         {
-            await _mediator.Send(new UpdateTaskRequest() { Id = id, UpdateTaskDto = updateTaskDto});
+            await _mediator.Send(new UpdateTaskRequest()
+            {
+                ProjectId = projectId, 
+                BoardId = boardId,
+                TaskId = taskId, 
+                UpdateTaskDto = updateTaskDto
+            });
         }
         
         /// <summary>
         /// Move task to root in board
         /// </summary>
-        /// <param name="id">Task id</param>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
+        /// <param name="taskId">Task id</param>
         /// <response code="200"></response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
-        [HttpPut("{id:long}/moveto/root")]
-        public async Task MoveToRoot(long id)
+        [HttpPut("{taskId:long}/move_to_root")]
+        public async Task MoveToRoot(long projectId, long boardId, long taskId)
         {
-            await _mediator.Send(new MoveTaskToRootRequest() { Id = id});
+            await _mediator.Send(new MoveTaskToRootRequest() { ProjectId = projectId, TaskId = taskId});
         }
         
         /// <summary>
         /// Move task to another task as children
         /// </summary>
-        /// <param name="id">Task id</param>
-        /// <param name="parentId">Parent task id</param>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
+        /// <param name="taskId">Task id</param>
+        /// <param name="parentTaskId">Parent task id</param>
         /// <response code="200"></response>
         /// <response code="400">New parent task id should not be equal to task id (Attempt to use self as parent)</response>
         /// <response code="400">New parent task id should not be equal to old parent task id (Attempt to change parent task to same parent)</response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
-        [HttpPut("{id:long}/moveto/task/{parentId:long}")]
-        public async Task MoveToTask(long id, long parentId)
+        [HttpPut("{taskId:long}/move_to_task/{parentTaskId:long}")]
+        public async Task MoveToTask(long projectId, long boardId, long taskId, long parentTaskId)
         {
-            await _mediator.Send(new MoveTaskToAnotherTaskRequest() { TaskId = id, NewParentTaskId = parentId});
+            await _mediator.Send(new MoveTaskToAnotherTaskRequest()
+            {
+                ProjectId = projectId, 
+                BoardId = boardId,
+                TaskId = taskId, 
+                NewParentTaskId = parentTaskId
+            });
         }
         
         /// <summary>
         /// Move task to another board
         /// </summary>
-        /// <param name="id">Task id</param>
+        /// <param name="projectId">Project id</param>
         /// <param name="boardId">Board id</param>
+        /// <param name="taskId">Task id</param>
+        /// <param name="newBoardId">Board id</param>
         /// <response code="200"></response>
         /// <response code="400">New board id should not be equal to old board id (Attempt to change board to same board)</response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
         /// <response code="404">Board not found</response>
-        [HttpPut("{id:long}/moveto/board/{boardId:long}")]
-        public async Task MoveToBoard(long id, long boardId)
+        [HttpPut("{taskId:long}/move_to_board/{newBoardId:long}")]
+        public async Task MoveToBoard(long projectId, long boardId, long taskId, long newBoardId)
         {
-            await _mediator.Send(new MoveTaskToAnotherBoardRequest() { TaskId = id, NewBoardId = boardId});
+            await _mediator.Send(new MoveTaskToAnotherBoardRequest()
+            {
+                ProjectId = projectId, 
+                BoardId = boardId,
+                TaskId = taskId, 
+                NewBoardId = newBoardId
+            });
         }
 
         /// <summary>
         /// Delete task
         /// </summary>
-        /// <param name="id">Task id</param>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
+        /// <param name="taskId">Task id</param>
         /// <response code="200"></response>
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
-        [HttpDelete("{id:long}")]
-        public async Task Delete(long id)
+        [HttpDelete("{taskId:long}")]
+        public async Task Delete(long projectId, long boardId, long taskId)
         {
-            await _mediator.Send(new DeleteTaskRequest() { Id = id});
+            await _mediator.Send(new DeleteTaskRequest() { ProjectId = projectId, BoardId = boardId, TaskId = taskId });
         }
-        
     }
 }

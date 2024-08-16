@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Text.Json;
 using AutoMapper;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Vtodo.Entities.Enums;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
@@ -20,27 +16,34 @@ namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
-        private readonly IMapper _mapper;
         private readonly IMediator _mediator;
+        private readonly IDistributedCache _distributedCache;
         
         public GetTasksByBoardRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper,
-            IMediator mediator)
+            IMediator mediator,
+            IDistributedCache distributedCache)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
-            _mapper = mapper;
             _mediator = mediator;
+            _distributedCache = distributedCache;
         }
         
         public async Task<List<TaskDto>?> Handle(GetTasksByBoardRequest request, CancellationToken cancellationToken)
         {
+            _projectSecurityService.CheckAccess(request.ProjectId, ProjectRoles.ProjectMember);
+            
+            var tasksByBoardStringFromCache = await _distributedCache.GetStringAsync($"tasks_by_board_{request.BoardId}", cancellationToken);
+            
+            if (tasksByBoardStringFromCache != null) return JsonSerializer.Deserialize<List<TaskDto>>(tasksByBoardStringFromCache);
+            
             var board = await _dbContext.Boards
                 .Include(x => x.Project)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == request.BoardId, cancellationToken: cancellationToken);
+            
             if (board == null)
             {
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new BoardNotFoundError() }, cancellationToken); 
@@ -54,19 +57,25 @@ namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard
                 .Where(x => x.Board.Id == board.Id)
                 .ToListAsync(cancellationToken: cancellationToken);
 
-            _projectSecurityService.CheckAccess(board.Project, ProjectRoles.ProjectMember);
+            var result = tasks.Select(task => new TaskDto()
+                {
+                    Id = task.Id,
+                    Title = task.Title,
+                    Description = task.Description,
+                    EndDate = task.EndDate == null
+                        ? -1
+                        : new DateTimeOffset((DateTime)task.EndDate).ToUnixTimeMilliseconds(),
+                    IsCompleted = task.IsCompleted,
+                    BoardId = task.Board.Id,
+                    ParentId = task.ParentTask?.Id,
+                    PrioritySort = task.PrioritySort,
+                    Priority = task.PrioritySort,
+                    ImageHeaderPath = task.ImageHeaderPath
+                })
+                .ToList();
             
-            var result = _mapper.Map<List<TaskDto>>(tasks);
-
-            for (var i = 0; i < tasks.Count; i++)
-            {
-                var task = tasks.ElementAt(i);
-                if (task.EndDate != null) result[i].EndDate = new DateTimeOffset((DateTime) task.EndDate).ToUnixTimeMilliseconds();
-
-                result[i].BoardId = task.Board.Id;
-                result[i].ParentId = task.ParentTask?.Id;
-            }
-
+            await _distributedCache.SetStringAsync($"tasks_by_board_{request.BoardId}", JsonSerializer.Serialize(result), cancellationToken);
+            
             return result;
         }
     }

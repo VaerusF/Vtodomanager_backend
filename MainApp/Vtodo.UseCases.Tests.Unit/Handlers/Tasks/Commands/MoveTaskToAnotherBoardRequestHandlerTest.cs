@@ -1,4 +1,7 @@
+using System.Text.Json;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.DomainServices.Interfaces;
@@ -10,6 +13,7 @@ using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.InvalidOperation;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard;
+using Vtodo.UseCases.Handlers.Tasks.Dto;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
@@ -17,14 +21,18 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
     public class MoveTaskToAnotherBoardRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
+        private IDistributedCache? _distributedCache = null!;
 
         [Fact]
         public async void Handle_SuccessfulMoveTaskToAnotherBoard_ReturnsSystemTask()
         {
             SetupDbContext();
+            SetupDistributedCache();
             
-            var request = new MoveTaskToAnotherBoardRequest() { TaskId = 1, NewBoardId = 2};
+            var request = new MoveTaskToAnotherBoardRequest() { ProjectId = 1, BoardId = 1, TaskId = 1, NewBoardId = 2};
             var newBoard = _dbContext.Boards.First(x => x.Id == request.NewBoardId); 
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
             var mockTaskService = SetupMockTaskService();
             mockTaskService
@@ -40,15 +48,76 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 }
             );
             
+            var listDto = new List<TaskDto>()
+            {
+                new TaskDto
+                {
+                    Id = _dbContext.Tasks.First(x => x.Id == 1).Id,
+                    Title = _dbContext.Tasks.First(x => x.Id == 1).Title,
+                    Description = _dbContext.Tasks.First(x => x.Id == 1).Description,
+                    EndDate = _dbContext.Tasks.First(x => x.Id == 1).EndDate == null
+                        ? -1
+                        : new DateTimeOffset((DateTime)_dbContext.Tasks.First(x => x.Id == 1).EndDate!).ToUnixTimeMilliseconds(),
+                    IsCompleted = _dbContext.Tasks.First(x => x.Id == 1).IsCompleted,
+                    BoardId = _dbContext.Tasks.Include(taskM => taskM.Board).First(x => x.Id == 1).Board.Id,
+                    ParentId = _dbContext.Tasks.Include(taskM => taskM.ParentTask).First(x => x.Id == 1).ParentTask?.Id,
+                    PrioritySort = _dbContext.Tasks.First(x => x.Id == 1).PrioritySort,
+                    Priority = (int)_dbContext.Tasks.First(x => x.Id == 1).Priority,
+                    ImageHeaderPath = _dbContext.Tasks.First(x => x.Id == 1).ImageHeaderPath
+                },
+                new TaskDto
+                {
+                    Id = _dbContext.Tasks.First(x => x.Id == 2).Id,
+                    Title = _dbContext.Tasks.First(x => x.Id == 2).Title,
+                    Description = _dbContext.Tasks.First(x => x.Id == 2).Description,
+                    EndDate = _dbContext.Tasks.First(x => x.Id == 2).EndDate == null
+                        ? -1
+                        : new DateTimeOffset((DateTime)_dbContext.Tasks.First(x => x.Id == 2).EndDate!).ToUnixTimeMilliseconds(),
+                    IsCompleted = _dbContext.Tasks.First(x => x.Id == 2).IsCompleted,
+                    BoardId = _dbContext.Tasks.Include(taskM => taskM.Board).First(x => x.Id == 2).Board.Id,
+                    ParentId = _dbContext.Tasks.Include(taskM => taskM.ParentTask).First(x => x.Id == 2).ParentTask?.Id,
+                    PrioritySort = _dbContext.Tasks.First(x => x.Id == 2).PrioritySort,
+                    Priority = (int)_dbContext.Tasks.First(x => x.Id == 2).Priority,
+                    ImageHeaderPath = _dbContext.Tasks.First(x => x.Id == 2).ImageHeaderPath
+                },
+            };
+
+            var listDto2 = new List<TaskDto>()
+            {
+                new TaskDto
+                {
+                    Id = _dbContext.Tasks.First(x => x.Id == 3).Id,
+                    Title = _dbContext.Tasks.First(x => x.Id == 3).Title,
+                    Description = _dbContext.Tasks.First(x => x.Id == 3).Description,
+                    EndDate = _dbContext.Tasks.First(x => x.Id == 3).EndDate == null
+                        ? -1
+                        : new DateTimeOffset((DateTime)_dbContext.Tasks.First(x => x.Id == 3).EndDate!)
+                            .ToUnixTimeMilliseconds(),
+                    IsCompleted = _dbContext.Tasks.First(x => x.Id == 3).IsCompleted,
+                    BoardId = _dbContext.Tasks.Include(taskM => taskM.Board).First(x => x.Id == 3).Board.Id,
+                    ParentId = _dbContext.Tasks.Include(taskM => taskM.ParentTask).First(x => x.Id == 3).ParentTask?.Id,
+                    PrioritySort = _dbContext.Tasks.First(x => x.Id == 3).PrioritySort,
+                    Priority = (int)_dbContext.Tasks.First(x => x.Id == 3).Priority,
+                    ImageHeaderPath = _dbContext.Tasks.First(x => x.Id == 3).ImageHeaderPath
+                },
+            };
+            
+            await _distributedCache!.SetStringAsync($"task_{request.TaskId}", JsonSerializer.Serialize(listDto[0]));
+            await _distributedCache!.SetStringAsync($"tasks_by_board_{request.BoardId}", JsonSerializer.Serialize(listDto));
+            await _distributedCache!.SetStringAsync($"tasks_by_board_{request.NewBoardId}", JsonSerializer.Serialize(listDto2));
+            
             var moveTaskToAnotherBoardRequestHandler = new MoveTaskToAnotherBoardRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object,
+                projectSecurityServiceMock.Object,
                 mockTaskService.Object,
-                SetupMockMediatorService().Object
+                SetupMockMediatorService().Object,
+                _distributedCache!
             );
 
             await moveTaskToAnotherBoardRequestHandler.Handle(request, CancellationToken.None);
             
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Exactly(2));
+
             mockTaskService.Verify(x => x.MoveAllTaskFromListToAnotherBoard(
                 It.IsAny<List<TaskM>>(), 
                 It.IsAny<Board>()), Times.Once
@@ -60,27 +129,37 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == 2 && x.Board.Id == 1));
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == 2 && x.Board.Id == 2));
             
+            Assert.Null(await _distributedCache!.GetStringAsync($"task_{request.TaskId}"));
+            Assert.Null(await _distributedCache!.GetStringAsync($"tasks_by_board_{request.BoardId}"));
+            Assert.Null(await _distributedCache!.GetStringAsync($"tasks_by_board_{request.NewBoardId}"));
+            
             CleanUp();
         }
         
         [Fact]
-        public async void Handle_BoardNotFound_SendBoardNotFoundError()
+        public async void Handle_NewBoardNotFound_SendBoardNotFoundError()
         {
             SetupDbContext();
 
-            var request = new MoveTaskToAnotherBoardRequest() { TaskId = 1, NewBoardId = 20};
+            var request = new MoveTaskToAnotherBoardRequest() { ProjectId = 1, BoardId = 1, TaskId = 1, NewBoardId = 20};
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
             var mediatorMock = SetupMockMediatorService();
             var error = new BoardNotFoundError();
             
             var moveTaskToAnotherBoardRequestHandler = new MoveTaskToAnotherBoardRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object,
+                projectSecurityServiceMock.Object,
                 SetupMockTaskService().Object,
-                mediatorMock.Object
+                mediatorMock.Object,
+                _distributedCache!
             );
 
             await moveTaskToAnotherBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
+            
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
@@ -93,19 +172,25 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         {
             SetupDbContext();
 
-            var request = new MoveTaskToAnotherBoardRequest() { TaskId = 100, NewBoardId = 2};
+            var request = new MoveTaskToAnotherBoardRequest() { ProjectId = 1, BoardId = 1, TaskId = 100, NewBoardId = 2};
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
             var mediatorMock = SetupMockMediatorService();
             var error = new TaskNotFoundError();
             
             var moveTaskToAnotherBoardRequestHandler = new MoveTaskToAnotherBoardRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object,
+                projectSecurityServiceMock.Object,
                 SetupMockTaskService().Object,
-                mediatorMock.Object
+                mediatorMock.Object,
+                _distributedCache!
             );
 
             await moveTaskToAnotherBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Exactly(2));
+            
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
@@ -118,19 +203,25 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         {
             SetupDbContext();
 
-            var request = new MoveTaskToAnotherBoardRequest() { TaskId = 1, NewBoardId = 1};
+            var request = new MoveTaskToAnotherBoardRequest() { ProjectId = 1, BoardId = 1, TaskId = 1, NewBoardId = 1};
+            
+            var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
             var mediatorMock = SetupMockMediatorService();
             var error = new NewBoardIdEqualOldIdError();
             
             var moveTaskToAnotherBoardRequestHandler = new MoveTaskToAnotherBoardRequestHandler(
                 _dbContext, 
-                SetupProjectSecurityServiceMock().Object,
+                projectSecurityServiceMock.Object,
                 SetupMockTaskService().Object,
-                mediatorMock.Object
+                mediatorMock.Object,
+                _distributedCache!
             );
             
             await moveTaskToAnotherBoardRequestHandler.Handle(request, CancellationToken.None);
+            
+            projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Exactly(2));
+            
             mediatorMock.Verify(x => x.Send(It.Is<SendErrorToClientRequest>(y => 
                         y.Error.GetType() == error.GetType()), 
                     It.IsAny<CancellationToken>()), Times.Once, $"Error request type is not a { error.GetType() }");
@@ -138,6 +229,11 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             CleanUp();
         }
 
+        private void SetupDistributedCache()
+        {
+            _distributedCache = TestDbUtils.SetupTestCacheInMemory();
+        }
+        
         private static Mock<IMediator> SetupMockMediatorService()
         {
             var mock = new Mock<IMediator>();
@@ -190,6 +286,15 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 Board = _dbContext.Boards.First(x => x.Id == 1),
                 ParentTask = _dbContext.Tasks.First(x => x.Id == 1)
             });
+            
+            _dbContext.Tasks.Add(new TaskM() { 
+                Title = "Test cache task",
+                Description = "Test cache task",
+                Priority = TaskPriority.None,
+                PrioritySort = 0,
+                Board = _dbContext.Boards.First(x => x.Id == 2),
+                ParentTask = null
+            });
             _dbContext.SaveChanges();
         }
         
@@ -197,6 +302,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
         {
             _dbContext?.Database.EnsureDeleted();
             _dbContext?.Dispose();
+            
+            _distributedCache = null!;
         }
     }
 }
