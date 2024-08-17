@@ -1,5 +1,4 @@
 using System.Text.Json;
-using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -14,20 +13,17 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardsByProject
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
-        private readonly IMapper _mapper;
         private readonly IMediator _mediator;
         private readonly IDistributedCache _distributedCache;
         
         public GetBoardsByProjectRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper,
             IMediator mediator,
             IDistributedCache distributedCache)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
-            _mapper = mapper;
             _mediator = mediator;
             _distributedCache = distributedCache;
         }
@@ -45,14 +41,16 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoardsByProject
                 .AsNoTracking()
                 .Where(x => x.Project.Id == request.ProjectId)
                 .ToListAsync(cancellationToken: cancellationToken);
-            
-            var result = _mapper.Map<List<BoardDto>>(boards);
 
-            for (var i = 0; i < boards.Count; i++)
-            {
-                var board = boards[i];
-                result[i].ProjectId = board.Project.Id;
-            }
+            var result = boards.Select(board => new BoardDto()
+                {
+                    Id = board.Id,
+                    Title = board.Title,
+                    PrioritySort = board.PrioritySort,
+                    ProjectId = board.Project.Id,
+                    ImageHeaderPath = board.ImageHeaderPath
+                })
+            .ToList();
             
             await _distributedCache.SetStringAsync($"boards_by_project_{request.ProjectId}", JsonSerializer.Serialize(result), cancellationToken);
             

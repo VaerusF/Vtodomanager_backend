@@ -1,6 +1,6 @@
-using AutoMapper;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
@@ -20,23 +20,28 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         {
             SetupDbContext();
             
-            var createProjectDto = new CreateProjectDto() { Title = "Test project create"};
+            var createProjectDto = new CreateProjectDto() { Title = "Test project create2"};
             
             var request = new CreateProjectRequest() { CreateProjectDto = createProjectDto};
 
             var account = _dbContext.Accounts.First();
+
+            var projectServiceMock = SetupProjectServiceMock();
+            projectServiceMock.Setup(x => x.CreateProject(It.IsAny<string>()))
+                .Returns(new Project()
+            {
+                Id = 2,
+                Title = createProjectDto.Title
+            });
             
             var currentAccountServiceMock = SetupCurrentAccountServiceMock();
             currentAccountServiceMock.Setup(x => x.GetAccount()).Returns(account);
             
-            var mapper = SetupMapperMock();
-            mapper.Setup(x => x.Map<Project>(It.IsAny<CreateProjectDto>())).Returns(new Project() { Title = createProjectDto.Title});
-
             var createProjectRequestHandler = new CreateProjectRequestHandler(
                 _dbContext, 
                 currentAccountServiceMock.Object, 
-                SetupProjectSecurityServiceMock().Object, 
-                mapper.Object
+                SetupProjectSecurityServiceMock().Object,
+                projectServiceMock.Object
             );
 
             await createProjectRequestHandler.Handle(request, CancellationToken.None);
@@ -47,16 +52,16 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
         }
 
         
-        private Mock<ICurrentAccountService> SetupCurrentAccountServiceMock()
+        private static Mock<ICurrentAccountService> SetupCurrentAccountServiceMock()
         {
             var mock = new Mock<ICurrentAccountService>();
 
             return mock;
         }
         
-        private static Mock<IMapper> SetupMapperMock()
+        private static Mock<IProjectService> SetupProjectServiceMock()
         {
-            return new Mock<IMapper>();
+            return new Mock<IProjectService>();
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()
@@ -73,7 +78,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Commands
 
             _dbContext.Accounts.Add(new Account() { Email = "test@test.ru", Username = "test", HashedPassword = "test" , Salt = new byte[64]});
             
-            _dbContext.Projects.Add(new Project() {Title = "Test Project2"});
+            _dbContext.Projects.Add(new Project() {Title = "Test create Project1"});
             _dbContext.SaveChanges();
         }
         

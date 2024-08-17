@@ -1,12 +1,6 @@
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;
-using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Vtodo.DomainServices.Interfaces;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Accounts.Dto;
 using Vtodo.UseCases.Handlers.Errors.Commands;

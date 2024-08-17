@@ -1,5 +1,4 @@
 using System.Text.Json;
-using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Caching.Distributed;
 using Moq;
@@ -29,9 +28,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
 
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
-            var board1 = _dbContext.Boards.First(x => x.Id == 1);
-            var board2 = _dbContext.Boards.First(x => x.Id == 2);
-            
             var listDto = new List<BoardDto>()
             {
                 new BoardDto() { 
@@ -50,13 +46,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
             
             await _distributedCache!.SetStringAsync($"boards_by_project_{request.ProjectId}", JsonSerializer.Serialize(listDto));
             
-            var mapperMock = SetupMapperMock();
-            mapperMock.Setup(x => x.Map<List<BoardDto>>(It.IsAny<List<Board>>())).Returns(listDto);
-            
             var getBoardsByProjectRequestHandler = new GetBoardsByProjectRequestHandler(
                 _dbContext, 
-                projectSecurityServiceMock.Object, 
-                mapperMock.Object,
+                projectSecurityServiceMock.Object,
                 SetupMockMediatorService().Object,
                 _distributedCache!
             );
@@ -83,25 +75,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
 
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
-            var mapperMock = SetupMapperMock();
-            mapperMock.Setup(x => x.Map<List<BoardDto>>(It.IsAny<List<Board>>())).Returns(new List<BoardDto>()
-            {
-                new BoardDto() {Id = _dbContext.Boards.First(x => x.Id == 1).Id,
-                    Title = _dbContext.Boards.First(x => x.Id == 1).Title,
-                    PrioritySort = _dbContext.Boards.First(x => x.Id == 1).PrioritySort,
-                    ImageHeaderPath = _dbContext.Boards.First(x => x.Id == 1).ImageHeaderPath
-                },
-                new BoardDto() {Id = _dbContext.Boards.First(x => x.Id == 2).Id, 
-                    Title = _dbContext.Boards.First(x => x.Id == 2).Title,
-                    PrioritySort = _dbContext.Boards.First(x => x.Id == 2).PrioritySort,
-                    ImageHeaderPath = _dbContext.Boards.First(x => x.Id == 2).ImageHeaderPath
-                }
-            });
-            
             var getBoardsByProjectRequestHandler = new GetBoardsByProjectRequestHandler(
                 _dbContext, 
-                projectSecurityServiceMock.Object, 
-                mapperMock.Object,
+                projectSecurityServiceMock.Object,
                 SetupMockMediatorService().Object,
                 _distributedCache!
             );
@@ -123,11 +99,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
             var mock = new Mock<IMediator>();
             
             return mock;
-        }
-        
-        private static Mock<IMapper> SetupMapperMock()
-        {
-            return new Mock<IMapper>();
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

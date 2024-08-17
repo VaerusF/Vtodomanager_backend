@@ -12,9 +12,6 @@ using Vtodo.Infrastructure.Implementation.Options;
 using Vtodo.Infrastructure.Implementation.Services;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
-using Vtodo.UseCases.Handlers.Accounts.Mappings;
-using Vtodo.UseCases.Handlers.Boards.Mappings;
-using Vtodo.UseCases.Handlers.Projects.Mappings;
 using Vtodo.UseCases.Handlers.Projects.Queries.GetProject;
 using Vtodo.Web.Utils;
 
@@ -30,13 +27,6 @@ namespace Vtodo.Web
         
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAutoMapper(cfg =>
-            {
-                cfg.AddProfile(typeof(ProjectsAutoMapperProfile));
-                cfg.AddProfile(typeof(BoardsAutoMapperProfile));
-                cfg.AddProfile(typeof(AccountsAutoMapperProfile));
-            });
-            
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(GetProjectRequest).Assembly);
@@ -86,6 +76,7 @@ namespace Vtodo.Web
             services.AddHealthChecks();
             
             services.AddScoped<ISecurityService, SecurityService>();
+            services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IProjectService, ProjectService>();
             services.AddScoped<IBoardService, BoardService>();
             services.AddScoped<ITaskService, TaskService>();

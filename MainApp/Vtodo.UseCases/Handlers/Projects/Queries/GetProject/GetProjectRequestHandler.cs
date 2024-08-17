@@ -1,4 +1,3 @@
-using AutoMapper;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,18 +13,15 @@ namespace Vtodo.UseCases.Handlers.Projects.Queries.GetProject
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
-        private readonly IMapper _mapper;
         private readonly IMediator _mediator;
         
         public GetProjectRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper,
             IMediator mediator)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
-            _mapper = mapper;
             _mediator = mediator;
         }
         
@@ -41,9 +37,13 @@ namespace Vtodo.UseCases.Handlers.Projects.Queries.GetProject
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new ProjectNotFoundError() }, cancellationToken); 
                 return null;
             }
-            
-            var result = _mapper.Map<ProjectDto>(project);
-            result.CreationDate = new DateTimeOffset(project.CreationDate).ToUnixTimeMilliseconds();
+
+            var result = new ProjectDto()
+            {
+                Id = project.Id,
+                Title = project.Title,
+                CreationDate = new DateTimeOffset(project.CreationDate).ToUnixTimeMilliseconds(),
+            };
             
             return result;
         }

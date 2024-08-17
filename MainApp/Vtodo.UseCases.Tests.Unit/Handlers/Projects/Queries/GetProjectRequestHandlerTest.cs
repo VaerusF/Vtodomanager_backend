@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
@@ -27,17 +26,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
             
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
-            var mapperMock = SetupMapperMock();
-            mapperMock.Setup(x => x.Map<ProjectDto>(It.IsAny<Project>())).Returns(new ProjectDto()
-            {
-                Title = _dbContext.Projects.First(x => x.Id == request.Id).Title,
-                CreationDate = new DateTimeOffset(_dbContext.Projects.First(x => x.Id == request.Id).CreationDate).ToUnixTimeMilliseconds()
-            });
-            
             var getProjectRequestHandler = new GetProjectRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object, 
-                mapperMock.Object, 
                 SetupMockMediatorService().Object
             );
 
@@ -59,17 +50,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
 
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
-            var mapperMock = SetupMapperMock();
-            mapperMock.Setup(x => x.Map<ProjectDto>(It.IsAny<Project>())).Returns(new ProjectDto()
-            {
-                Title = _dbContext.Projects.First(x => x.Id == request.Id).Title,
-                CreationDate = new DateTimeOffset(_dbContext.Projects.First(x => x.Id == request.Id).CreationDate).ToUnixTimeMilliseconds()
-            });
-            
             var getProjectRequestHandler = new GetProjectRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object, 
-                mapperMock.Object, 
                 SetupMockMediatorService().Object
             );
 
@@ -97,7 +80,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
             var getProjectRequestHandler = new GetProjectRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object,
-                SetupMapperMock().Object, 
                 mediatorMock.Object
             );
             
@@ -118,11 +100,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Projects.Queries
             var mock = new Mock<IMediator>();
             
             return mock;
-        }
-
-        private static Mock<IMapper> SetupMapperMock()
-        {
-            return new Mock<IMapper>();
         }
         
         private static Mock<IProjectSecurityService> SetupProjectSecurityServiceMock()

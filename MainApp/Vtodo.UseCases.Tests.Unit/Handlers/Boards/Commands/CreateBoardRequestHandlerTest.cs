@@ -1,9 +1,9 @@
 using System.Text.Json;
-using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Caching.Distributed;
 using Moq;
 using Vtodo.DataAccess.Postgres;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
@@ -32,8 +32,19 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             var projectSecurityServiceMock = SetupProjectSecurityService();
             
-            var board1 = _dbContext.Boards.First(x => x.Id == 1);
-            var board2 = _dbContext.Boards.First(x => x.Id == 2);
+            var boardService = SetupBoardServiceMock();
+            boardService.Setup(x => x.CreateBoard(
+                It.IsAny<string>(), 
+                It.IsAny<Project>(), 
+                It.IsAny<int>())
+            ).Returns(new Board()
+            {
+                Id = 3,
+                Title = createBoardDto.Title,
+                PrioritySort = createBoardDto.PrioritySort,
+                Project = _dbContext.Projects.First(x => x.Id == request.ProjectId),
+                ImageHeaderPath = null
+            });
             
             var listDto = new List<BoardDto>()
             {
@@ -53,15 +64,13 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             await _distributedCache!.SetStringAsync($"boards_by_project_{request.ProjectId}", JsonSerializer.Serialize(listDto));
             
-            var mockMapper = SetupMockMapper();
-            mockMapper.Setup(x => x.Map<Board>(createBoardDto)).Returns(new Board() {Title = createBoardDto.Title, PrioritySort = 0});
             
             var createBoardRequestHandler = new CreateBoardRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object, 
-                mockMapper.Object,
                 SetupMockMediatorService().Object,
-                _distributedCache!
+                _distributedCache!,
+                boardService.Object
             );
             
             await createBoardRequestHandler.Handle(request, CancellationToken.None);
@@ -84,9 +93,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var request = new CreateBoardRequest() { ProjectId = 4, CreateBoardDto = createBoardDto };
 
             var projectSecurityServiceMock = SetupProjectSecurityService();
-            
-            var mockMapper = SetupMockMapper();
-            mockMapper.Setup(x => x.Map<Board>(createBoardDto)).Returns(new Board() {Title = createBoardDto.Title, PrioritySort = 0});
+
+            var boardService = SetupBoardServiceMock();
             
             var mediatorMock = SetupMockMediatorService();
             var error = new ProjectNotFoundError();
@@ -94,9 +102,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             var createBoardRequestHandler = new CreateBoardRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object, 
-                mockMapper.Object,
                 mediatorMock.Object,
-                _distributedCache!
+                _distributedCache!,
+                boardService.Object
             );
             
             await createBoardRequestHandler.Handle(request, CancellationToken.None);
@@ -125,9 +133,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             return new Mock<IProjectSecurityService>();
         }
         
-        private static Mock<IMapper> SetupMockMapper()
+        private static Mock<IBoardService> SetupBoardServiceMock()
         {
-            return new Mock<IMapper>();
+            return new Mock<IBoardService>();
         }
         
         private void SetupDistributedCache()

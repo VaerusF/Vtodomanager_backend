@@ -1,5 +1,4 @@
 using System.Text.Json;
-using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -16,20 +15,17 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoard
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
-        private readonly IMapper _mapper;
         private readonly IMediator _mediator;
         private readonly IDistributedCache _distributedCache;
         
         public GetBoardRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper,
             IMediator mediator,
             IDistributedCache distributedCache)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
-            _mapper = mapper;
             _mediator = mediator;
             _distributedCache = distributedCache;
         }
@@ -52,10 +48,15 @@ namespace Vtodo.UseCases.Handlers.Boards.Queries.GetBoard
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new BoardNotFoundError() }, cancellationToken); 
                 return null;
             }
-            
-            var result = _mapper.Map<BoardDto>(board);
 
-            result.ProjectId = board.Project.Id;
+            var result = new BoardDto()
+            {
+                Id = board.Id,
+                Title = board.Title,
+                ProjectId = board.Project.Id,
+                PrioritySort = board.PrioritySort,
+                ImageHeaderPath = board.ImageHeaderPath
+            };
             
             await _distributedCache.SetStringAsync($"board_{request.BoardId}", JsonSerializer.Serialize(result), cancellationToken);
             

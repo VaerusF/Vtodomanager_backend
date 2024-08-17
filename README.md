@@ -10,7 +10,6 @@
 * PostgreSQL 14;
 * MediatR;
 * Swashbuckle (Swagger);
-* AutoMapper;
 * RabbitMQ;
 * Redis;
 * Docker.

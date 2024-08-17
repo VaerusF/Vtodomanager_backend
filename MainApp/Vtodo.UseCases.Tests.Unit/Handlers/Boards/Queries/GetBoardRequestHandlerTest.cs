@@ -1,5 +1,4 @@
 using System.Text.Json;
-using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Caching.Distributed;
 using Moq;
@@ -40,15 +39,11 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
                 ProjectId = request.ProjectId
             };
             
-            var mapperMock = SetupMapperMock();
-            mapperMock.Setup(x => x.Map<BoardDto>(It.IsAny<Board>())).Returns(boardDto);
-            
             await _distributedCache!.SetStringAsync($"board_{request.BoardId}", JsonSerializer.Serialize(boardDto));
             
             var getBoardRequestHandler = new GetBoardRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object, 
-                mapperMock.Object,
                 SetupMockMediatorService().Object,
                 _distributedCache!
             );
@@ -73,20 +68,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
 
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
-            var mapperMock = SetupMapperMock();
-            mapperMock.Setup(x => x.Map<BoardDto>(It.IsAny<Board>())).Returns(new BoardDto()
-            {
-                Id = request.BoardId,
-                ImageHeaderPath = _dbContext.Boards.First(x => x.Id == request.BoardId).ImageHeaderPath,
-                Title = _dbContext.Boards.First(x => x.Id == request.BoardId).Title,
-                PrioritySort = _dbContext.Boards.First(x => x.Id == request.BoardId).PrioritySort,
-                ProjectId = request.ProjectId
-            });
-            
             var getBoardRequestHandler = new GetBoardRequestHandler(
                 _dbContext, 
-                projectSecurityServiceMock.Object, 
-                mapperMock.Object,
+                projectSecurityServiceMock.Object,
                 SetupMockMediatorService().Object,
                 _distributedCache!
             );
@@ -116,8 +100,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
             
             var getBoardRequestHandler = new GetBoardRequestHandler(
                 _dbContext, 
-                projectSecurityServiceMock.Object, 
-                SetupMapperMock().Object,
+                projectSecurityServiceMock.Object,
                 mediatorMock.Object,
                 _distributedCache!
             );
@@ -147,11 +130,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Queries
             mock.Setup(x => x.CheckAccess(It.IsAny<Project>(), It.IsAny<ProjectRoles>())).Verifiable();
             
             return mock;
-        }
-        
-        private static Mock<IMapper> SetupMapperMock()
-        {
-            return new Mock<IMapper>();
         }
         
         private void SetupDistributedCache()

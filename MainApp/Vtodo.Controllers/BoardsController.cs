@@ -126,7 +126,7 @@ namespace Vtodo.Controllers
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Board not found</response>
-        [HttpDelete("")]
+        [HttpDelete("{boardId:long}")]
         public async Task Delete(long projectId, long boardId)
         {
             await _mediator.Send(new DeleteBoardRequest() { ProjectId = projectId, BoardId = boardId});

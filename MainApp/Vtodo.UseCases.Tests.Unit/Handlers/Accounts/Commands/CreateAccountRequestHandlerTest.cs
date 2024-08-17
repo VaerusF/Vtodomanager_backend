@@ -1,11 +1,7 @@
-using System.Linq;
-using System.Threading;
-using AutoMapper;
 using MediatR;
 using Moq;
 using Vtodo.DataAccess.Postgres;
 using Vtodo.DomainServices.Interfaces;
-using Vtodo.Entities.Exceptions;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.Tests.Utils;
@@ -31,18 +27,35 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
                 { Email = "test@test.ru", Username = "test", Password = "test", ConfirmPassword = "test"};
             
             var request = new CreateAccountRequest() { CreateAccountDto = createAccountDto };
+
+            var account = new Account();
             
-            var mapperMock = SetupMockMapper();
-            mapperMock.Setup(x => x.Map<Account>(It.IsAny<CreateAccountDto>()))
-                .Returns(new Account() {Email = createAccountDto.Email, Username = createAccountDto.Username});
+            var accountServiceMock = SetupAccountServiceMock();
+            accountServiceMock.Setup(x => x.CreateAccount(
+                    It.IsAny<string>(), 
+                    It.IsAny<string>(), 
+                    It.IsAny<string>(), 
+                    It.IsAny<byte[]>(),
+                    It.IsAny<string?>(), 
+                    It.IsAny<string?>()))
+                .Callback((string email, string username, string hashedPassword, byte[] salt, string? firstname, string? surname) =>
+                {
+                    account.Email = email;
+                    account.Username = username;
+                    account.HashedPassword = hashedPassword;
+                    account.Salt = salt;
+                    account.Firstname = firstname;
+                    account.Surname = surname;
+                })
+                .Returns(account);
             
             var createAccountRequestHandler = new CreateAccountRequestHandler(
                 _dbContext,
                 SetupMockSecurityService().Object,
                 SetupMockJwtService().Object,
                 SetupMockConfigService().Object,
-                mapperMock.Object,
-                SetupMockMediatorService().Object
+                SetupMockMediatorService().Object,
+                accountServiceMock.Object
             );
             
             var result = createAccountRequestHandler.Handle(request, CancellationToken.None);
@@ -68,11 +81,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
             await _dbContext.SaveChangesAsync();
             
             var request = new CreateAccountRequest() { CreateAccountDto = createAccountDto };
-            
-            var mapperMock = SetupMockMapper();
-            mapperMock.Setup(x => x.Map<Account>(It.IsAny<CreateAccountDto>()))
-                .Returns(new Account() {Email = createAccountDto.Email, Username = createAccountDto.Username});
 
+            var accountServiceMock = SetupAccountServiceMock();
+            
             var mediatorMock = SetupMockMediatorService();
             var error = new EmailAlreadyExistsError();
             
@@ -81,8 +92,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
                 SetupMockSecurityService().Object,
                 SetupMockJwtService().Object,
                 SetupMockConfigService().Object,
-                mapperMock.Object,
-                mediatorMock.Object
+                mediatorMock.Object,
+                accountServiceMock.Object
             );
             
             var result = await createAccountRequestHandler.Handle(request, CancellationToken.None);
@@ -108,9 +119,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
             
             var request = new CreateAccountRequest() { CreateAccountDto = createAccountDto };
             
-            var mapperMock = SetupMockMapper();
-            mapperMock.Setup(x => x.Map<Account>(It.IsAny<CreateAccountDto>()))
-                .Returns(new Account() {Email = createAccountDto.Email, Username = createAccountDto.Username});
+            var accountServiceMock = SetupAccountServiceMock();
             
             var mediatorMock = SetupMockMediatorService();
             var error = new UsernameAlreadyExistsError();
@@ -120,8 +129,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
                 SetupMockSecurityService().Object,
                 SetupMockJwtService().Object,
                 SetupMockConfigService().Object,
-                mapperMock.Object,
-                mediatorMock.Object
+                mediatorMock.Object,
+                accountServiceMock.Object
             );
             
             var result = await createAccountRequestHandler.Handle(request, CancellationToken.None);
@@ -144,9 +153,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
 
             var request = new CreateAccountRequest() { CreateAccountDto = createAccountDto };
             
-            var mapperMock = SetupMockMapper();
-            mapperMock.Setup(x => x.Map<Account>(It.IsAny<CreateAccountDto>()))
-                .Returns(new Account() {Email = createAccountDto.Email, Username = createAccountDto.Username});
+            var accountServiceMock = SetupAccountServiceMock();
             
             var mediatorMock = SetupMockMediatorService();
             var error = new PasswordsNotEqualsError();
@@ -156,8 +163,8 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
                 SetupMockSecurityService().Object,
                 SetupMockJwtService().Object,
                 SetupMockConfigService().Object,
-                mapperMock.Object,
-                mediatorMock.Object
+                mediatorMock.Object,
+                accountServiceMock.Object
             );
             
             var result = await createAccountRequestHandler.Handle(request, CancellationToken.None);
@@ -169,9 +176,9 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Accounts.Commands
             CleanUp();
         }
         
-        private static Mock<IMapper> SetupMockMapper()
+        private static Mock<IAccountService> SetupAccountServiceMock()
         {
-            return new Mock<IMapper>();
+            return new Mock<IAccountService>();
         }
         
         private static Mock<ISecurityService> SetupMockSecurityService()

@@ -6,6 +6,18 @@ namespace Vtodo.DomainServices.Implementation;
 
 internal class BoardService : IBoardService
 {
+    public Board CreateBoard(string title, Project project, int prioritySort = 0)
+    {
+        var board = new Board()
+        {
+            Title = title,
+            PrioritySort = prioritySort,
+            Project = project
+        };
+        
+        return board;
+    }
+
     public void UpdateBoard(Board board, string title)
     {
         board.Title = title;

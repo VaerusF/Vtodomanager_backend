@@ -1,4 +1,3 @@
-using AutoMapper;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;

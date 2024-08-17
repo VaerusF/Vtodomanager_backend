@@ -1,5 +1,4 @@
 using System.Text.Json;
-using AutoMapper;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

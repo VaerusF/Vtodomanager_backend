@@ -1,7 +1,5 @@
-using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Projects.Dto;
@@ -13,18 +11,15 @@ namespace Vtodo.UseCases.Handlers.Projects.Queries.GetUserProjectList
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
         private readonly ICurrentAccountService _currentAccountService;
-        private readonly IMapper _mapper;
         
         public GetAccountProjectsListRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            ICurrentAccountService currentAccountService,
-            IMapper mapper)
+            ICurrentAccountService currentAccountService)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
             _currentAccountService = currentAccountService;
-            _mapper = mapper;
         }
         
         public async Task<List<ProjectDto>> Handle(GetAccountProjectsListRequest request, CancellationToken cancellationToken)
@@ -37,15 +32,13 @@ namespace Vtodo.UseCases.Handlers.Projects.Queries.GetUserProjectList
                 .Select(x => x.Project)
                 .ToListAsync(cancellationToken);
 
-            var result = _mapper.Map<List<ProjectDto>>(projects);
-
-            for (var i = 0; i < result.Count; i++)
-            {
-                var project = projects.FirstOrDefault(x=> x.Id == result.ElementAt(i).Id);
-                if (project == null) continue;
-
-                result[i].CreationDate = new DateTimeOffset(project.CreationDate).ToUnixTimeMilliseconds();
-            }
+            var result = projects.Select(project => new ProjectDto()
+                {
+                    Id = project.Id,
+                    Title = project.Title,
+                    CreationDate = new DateTimeOffset(project.CreationDate).ToUnixTimeMilliseconds()
+                })
+            .ToList();
             
             return result;
         }

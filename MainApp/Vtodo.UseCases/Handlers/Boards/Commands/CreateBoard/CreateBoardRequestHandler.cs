@@ -1,8 +1,7 @@
-using AutoMapper;
-using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
 using Microsoft.Extensions.Caching.Distributed;
+using Vtodo.DomainServices.Interfaces;
 using Vtodo.Entities.Enums;
 using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
@@ -14,22 +13,22 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.CreateBoard
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
-        private readonly IMapper _mapper;
         private readonly IMediator _mediator;
         private readonly IDistributedCache _distributedCache;
+        private readonly IBoardService _boardService;
         
         public CreateBoardRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
-            IMapper mapper,
             IMediator mediator,
-            IDistributedCache distributedCache)
+            IDistributedCache distributedCache,
+            IBoardService boardService)
         {
             _dbContext = dbContext;
             _projectSecurityService = projectSecurityService;
-            _mapper = mapper;
             _mediator = mediator;
             _distributedCache = distributedCache;
+            _boardService = boardService;
         }
         
         public async Task Handle(CreateBoardRequest request, CancellationToken cancellationToken)
@@ -37,7 +36,6 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.CreateBoard
             _projectSecurityService.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate);
             
             var createDto = request.CreateBoardDto;
-            var board = _mapper.Map<Board>(createDto);
 
             var project = await _dbContext.Projects.FindAsync(request.ProjectId, cancellationToken);
             if (project == null)
@@ -46,7 +44,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.CreateBoard
                 return;
             }
             
-            board.Project = project;
+            var board = _boardService.CreateBoard(createDto.Title, project);
             
             _dbContext.Boards.Add(board);
 

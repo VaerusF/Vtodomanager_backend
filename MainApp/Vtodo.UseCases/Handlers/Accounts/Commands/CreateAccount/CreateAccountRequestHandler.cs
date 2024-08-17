@@ -1,4 +1,3 @@
-using AutoMapper;
 using Vtodo.Entities.Models;
 using Vtodo.Infrastructure.Interfaces.DataAccess;
 using MediatR;
@@ -17,29 +16,28 @@ namespace Vtodo.UseCases.Handlers.Accounts.Commands.CreateAccount
         private readonly ISecurityService _securityService;
         private readonly IJwtService _jwtService;
         private readonly IConfigService _configService;
-        private readonly IMapper _mapper;
         private readonly IMediator _mediator;
+        private readonly IAccountService _accountService;
         
         public CreateAccountRequestHandler(
             IDbContext dbContext, 
             ISecurityService securityService,
             IJwtService jwtService,
             IConfigService configService,
-            IMapper mapper,
-            IMediator mediator)
+            IMediator mediator,
+            IAccountService accountService)
         {
             _dbContext = dbContext;
             _securityService = securityService;
             _jwtService = jwtService;
             _configService = configService;
-            _mapper = mapper;
             _mediator = mediator;
+            _accountService = accountService;
         }
         
         public async Task<JwtTokensDto?> Handle(CreateAccountRequest request, CancellationToken cancellationToken)
         {
             var createDto = request.CreateAccountDto;
-            var account = _mapper.Map<Account>(createDto);
 
             if (_dbContext.Accounts.FirstOrDefault(x => x.Email == createDto.Email) != null)
             {
@@ -58,13 +56,15 @@ namespace Vtodo.UseCases.Handlers.Accounts.Commands.CreateAccount
                 await _mediator.Send(new SendErrorToClientRequest() { Error = new PasswordsNotEqualsError() }, cancellationToken);
                 return null;
             }
-                
-            
-            if (!string.IsNullOrWhiteSpace(createDto.Firstname)) account.Firstname = createDto.Firstname;
-            if (!string.IsNullOrWhiteSpace(createDto.Surname)) account.Surname = createDto.Surname;
 
-            account.HashedPassword = _securityService.HashPassword(createDto.Password, _configService.HasherKeySize, _configService.HasherIterations, out byte[] salt);
-            account.Salt = salt;
+            var account = _accountService.CreateAccount(
+                createDto.Email, 
+                createDto.Username, 
+                _securityService.HashPassword(createDto.Password, _configService.HasherKeySize, _configService.HasherIterations, out byte[] salt), 
+                salt,
+                createDto.Firstname,
+                createDto.Surname
+            );
             
             _dbContext.Accounts.Add(account);
 
