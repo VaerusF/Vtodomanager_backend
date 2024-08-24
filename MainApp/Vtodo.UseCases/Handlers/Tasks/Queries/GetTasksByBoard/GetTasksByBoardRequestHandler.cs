@@ -68,7 +68,7 @@ namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard
                     BoardId = task.Board.Id,
                     ParentId = task.ParentTask?.Id,
                     PrioritySort = task.PrioritySort,
-                    Priority = task.PrioritySort,
+                    Priority = (int)task.Priority,
                     ImageHeaderPath = task.ImageHeaderPath
                 })
                 .ToList();
