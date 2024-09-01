@@ -15,7 +15,7 @@ namespace Vtodo.UseCases.Handlers.Tasks.Dto
         [Required]
         public bool IsCompleted { get; set; }
         
-        public int? EndDateTimeStamp { get; set; }
+        public long? EndDateTimeStamp { get; set; }
         
         [Required]
         [EnumDataType(typeof(TaskPriority))]
