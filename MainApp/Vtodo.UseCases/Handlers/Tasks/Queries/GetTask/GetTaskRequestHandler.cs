@@ -61,7 +61,7 @@ namespace Vtodo.UseCases.Handlers.Tasks.Queries.GetTask
                 Title = task.Title,
                 Description = task.Description,
                 EndDate = task.EndDate == null
-                    ? -1
+                    ? null
                     : new DateTimeOffset((DateTime)task.EndDate).ToUnixTimeMilliseconds(),
                 IsCompleted = task.IsCompleted,
                 BoardId = task.Board.Id,
