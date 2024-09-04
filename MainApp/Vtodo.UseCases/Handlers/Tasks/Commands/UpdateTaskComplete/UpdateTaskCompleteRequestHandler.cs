@@ -8,9 +8,9 @@ using Vtodo.Infrastructure.Interfaces.Services;
 using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 
-namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
+namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTaskComplete
 {
-    internal class UpdateTaskRequestHandler : IRequestHandler<UpdateTaskRequest>
+    internal class UpdateTaskCompleteRequestHandler : IRequestHandler<UpdateTaskCompleteRequest>
     {
         private readonly IDbContext _dbContext;
         private readonly IProjectSecurityService _projectSecurityService;
@@ -18,7 +18,7 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
         private readonly IMediator _mediator;
         private readonly IDistributedCache _distributedCache;
         
-        public UpdateTaskRequestHandler(
+        public UpdateTaskCompleteRequestHandler(
             IDbContext dbContext, 
             IProjectSecurityService projectSecurityService,
             ITaskService taskService,
@@ -32,11 +32,11 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
             _distributedCache = distributedCache;
         }
         
-        public async Task Handle(UpdateTaskRequest request, CancellationToken cancellationToken)
+        public async Task Handle(UpdateTaskCompleteRequest request, CancellationToken cancellationToken)
         {
             _projectSecurityService.CheckAccess(request.ProjectId, ProjectRoles.ProjectUpdate);
             
-            var updateTaskDto = request.UpdateTaskDto;
+            var updateTaskCompleteDto = request.UpdateTaskCompleteDto;
 
             var task = await _dbContext.Tasks
                 .Include(x => x.Board)
@@ -49,12 +49,7 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask
                 return;
             }
             
-            _taskService.UpdateTask(task, 
-                updateTaskDto.Title, 
-                updateTaskDto.Description, 
-                updateTaskDto.EndDateTimeStamp, 
-                updateTaskDto.Priority
-            );
+            _taskService.UpdateTaskComplete(task, updateTaskCompleteDto.IsCompleted);
             
             await _dbContext.SaveChangesAsync(cancellationToken);
             

@@ -6,6 +6,7 @@ using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToRoot;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask;
+using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTaskComplete;
 using Vtodo.UseCases.Handlers.Tasks.Dto;
 using Vtodo.UseCases.Handlers.Tasks.Queries.GetTask;
 using Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard;
@@ -97,6 +98,29 @@ namespace Vtodo.Controllers
                 BoardId = boardId,
                 TaskId = taskId, 
                 UpdateTaskDto = updateTaskDto
+            });
+        }
+        
+        /// <summary>
+        /// Update complete status
+        /// </summary>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
+        /// <param name="taskId">Task id</param>
+        /// <param name="updateTaskCompleteDto">Task dto</param>
+        /// <response code="200"></response>
+        /// <response code="401">Unauthorized</response>
+        /// <response code="403">Access denied</response>
+        /// <response code="404">Task not found</response>
+        [HttpPut("{taskId:long}/update_complete")]
+        public async Task UpdateTaskComplete(long projectId, long boardId, long taskId, [FromBody] UpdateTaskCompleteDto updateTaskCompleteDto)
+        {
+            await _mediator.Send(new UpdateTaskCompleteRequest()
+            {
+                ProjectId = projectId, 
+                BoardId = boardId,
+                TaskId = taskId, 
+                UpdateTaskCompleteDto = updateTaskCompleteDto
             });
         }
         

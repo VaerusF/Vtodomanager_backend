@@ -40,7 +40,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 It.IsAny<string>(),
                 It.IsAny<Board>(),
                 It.IsAny<bool>(),
-                It.IsAny<int?>(),
+                It.IsAny<long?>(),
                 It.IsAny<TaskPriority>(),
                 It.IsAny<TaskM?>()
             )).Returns(new TaskM()
@@ -64,7 +64,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                     Title = _dbContext.Tasks.First(x => x.Id == 1).Title,
                     Description = _dbContext.Tasks.First(x => x.Id == 1).Description,
                     EndDate = _dbContext.Tasks.First(x => x.Id == 1).EndDate == null
-                        ? -1
+                        ? null
                         : new DateTimeOffset((DateTime)_dbContext.Tasks.First(x => x.Id == 1).EndDate!).ToUnixTimeMilliseconds(),
                     IsCompleted = _dbContext.Tasks.First(x => x.Id == 1).IsCompleted,
                     BoardId = _dbContext.Tasks.Include(taskM => taskM.Board).First(x => x.Id == 1).Board.Id,
@@ -79,7 +79,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                     Title = _dbContext.Tasks.First(x => x.Id == 2).Title,
                     Description = _dbContext.Tasks.First(x => x.Id == 2).Description,
                     EndDate = _dbContext.Tasks.First(x => x.Id == 2).EndDate == null
-                        ? -1
+                        ? null
                         : new DateTimeOffset((DateTime)_dbContext.Tasks.First(x => x.Id == 2).EndDate!).ToUnixTimeMilliseconds(),
                     IsCompleted = _dbContext.Tasks.First(x => x.Id == 2).IsCompleted,
                     BoardId = _dbContext.Tasks.Include(taskM => taskM.Board).First(x => x.Id == 2).Board.Id,

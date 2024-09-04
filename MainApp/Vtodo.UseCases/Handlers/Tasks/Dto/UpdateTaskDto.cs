@@ -11,9 +11,6 @@ namespace Vtodo.UseCases.Handlers.Tasks.Dto
         
         [Required]
         public string Description { get; set; } = string.Empty;
-
-        [Required]
-        public bool IsCompleted { get; set; }
         
         public long? EndDateTimeStamp { get; set; }
         
