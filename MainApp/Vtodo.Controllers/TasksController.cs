@@ -112,7 +112,7 @@ namespace Vtodo.Controllers
         /// <response code="401">Unauthorized</response>
         /// <response code="403">Access denied</response>
         /// <response code="404">Task not found</response>
-        [HttpPut("{taskId:long}/update_complete")]
+        [HttpPut("{taskId:long}/complete")]
         public async Task UpdateTaskComplete(long projectId, long boardId, long taskId, [FromBody] UpdateTaskCompleteDto updateTaskCompleteDto)
         {
             await _mediator.Send(new UpdateTaskCompleteRequest()
