@@ -349,6 +349,32 @@
             <response code="403">Access denied</response>
             <response code="404">Task not found</response>
         </member>
+        <member name="M:Vtodo.Controllers.TasksController.UpdateTaskComplete(System.Int64,System.Int64,System.Int64,Vtodo.UseCases.Handlers.Tasks.Dto.UpdateTaskCompleteDto)">
+            <summary>
+            Update complete status
+            </summary>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
+            <param name="taskId">Task id</param>
+            <param name="updateTaskCompleteDto">Task dto</param>
+            <response code="200"></response>
+            <response code="401">Unauthorized</response>
+            <response code="403">Access denied</response>
+            <response code="404">Task not found</response>
+        </member>
+        <member name="M:Vtodo.Controllers.TasksController.UpdateTaskPriority(System.Int64,System.Int64,System.Int64,Vtodo.UseCases.Handlers.Tasks.Dto.UpdateTaskPriorityDto)">
+            <summary>
+            Update priority status
+            </summary>
+            <param name="projectId">Project id</param>
+            <param name="boardId">Board id</param>
+            <param name="taskId">Task id</param>
+            <param name="updateTaskPriorityDto">Task dto</param>
+            <response code="200"></response>
+            <response code="401">Unauthorized</response>
+            <response code="403">Access denied</response>
+            <response code="404">Task not found</response>
+        </member>
         <member name="M:Vtodo.Controllers.TasksController.MoveToRoot(System.Int64,System.Int64,System.Int64)">
             <summary>
             Move task to root in board

@@ -7,6 +7,7 @@ using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToRoot;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTaskComplete;
+using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTaskPriority;
 using Vtodo.UseCases.Handlers.Tasks.Dto;
 using Vtodo.UseCases.Handlers.Tasks.Queries.GetTask;
 using Vtodo.UseCases.Handlers.Tasks.Queries.GetTasksByBoard;
@@ -121,6 +122,29 @@ namespace Vtodo.Controllers
                 BoardId = boardId,
                 TaskId = taskId, 
                 UpdateTaskCompleteDto = updateTaskCompleteDto
+            });
+        }
+        
+        /// <summary>
+        /// Update priority status
+        /// </summary>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param>
+        /// <param name="taskId">Task id</param>
+        /// <param name="updateTaskPriorityDto">Task dto</param>
+        /// <response code="200"></response>
+        /// <response code="401">Unauthorized</response>
+        /// <response code="403">Access denied</response>
+        /// <response code="404">Task not found</response>
+        [HttpPut("{taskId:long}/priority")]
+        public async Task UpdateTaskPriority(long projectId, long boardId, long taskId, [FromBody] UpdateTaskPriorityDto updateTaskPriorityDto)
+        {
+            await _mediator.Send(new UpdateTaskPriorityRequest()
+            {
+                ProjectId = projectId, 
+                BoardId = boardId,
+                TaskId = taskId, 
+                UpdateTaskPriorityDto = updateTaskPriorityDto
             });
         }
         

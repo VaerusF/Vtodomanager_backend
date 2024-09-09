@@ -13,40 +13,41 @@ using Vtodo.UseCases.Handlers.Errors.Commands;
 using Vtodo.UseCases.Handlers.Errors.Dto.NotFound;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTaskComplete;
+using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTaskPriority;
 using Vtodo.UseCases.Handlers.Tasks.Dto;
 using Xunit;
 
 namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
 {
-    public class UpdateTaskCompleteRequestHandlerTest
+    public class UpdateTaskPriorityRequestHandlerTest
     {
         private AppDbContext _dbContext = null!;
         private IDistributedCache? _distributedCache = null!;
 
         [Fact]
-        public async void Handle_SuccessfulUpdateTaskComplete_ReturnsSystemTask()
+        public async void Handle_SuccessfulUpdateTaskPriority_ReturnsSystemTask()
         {
             SetupDbContext();
             SetupDistributedCache();
             
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
-            var updateTaskCompleteDto = new UpdateTaskCompleteDto()
+            var updateTaskPriorityDto = new UpdateTaskPriorityDto()
             {
-                IsCompleted = true
+                Priority = TaskPriority.Priority2
             };
             
             var mockTaskService = SetupMockTaskService();
-            mockTaskService.Setup(x => x.UpdateTaskComplete(
+            mockTaskService.Setup(x => x.UpdateTaskPriority(
                 It.IsAny<TaskM>(),  
-                It.IsAny<bool>()
+                It.IsAny<TaskPriority>()
             )
-            ).Callback((TaskM task, bool isCompleted) =>
+            ).Callback((TaskM task, TaskPriority priority) =>
             {
-                task.IsCompleted = isCompleted;
+                task.Priority = priority;
             });
             
-            var request = new UpdateTaskCompleteRequest() { ProjectId = 1, BoardId = 1, TaskId = 1, UpdateTaskCompleteDto = updateTaskCompleteDto };
+            var request = new UpdateTaskPriorityRequest() { ProjectId = 1, BoardId = 1, TaskId = 1, UpdateTaskPriorityDto = updateTaskPriorityDto };
             
             var listDto = new List<TaskDto>()
             {
@@ -70,7 +71,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             await _distributedCache!.SetStringAsync($"task_{request.TaskId}", JsonSerializer.Serialize(listDto[0]));
             await _distributedCache!.SetStringAsync($"tasks_by_board_{request.BoardId}", JsonSerializer.Serialize(listDto));
             
-            var updateTaskCompleteRequestHandler = new UpdateTaskCompleteRequestHandler(
+            var updateTaskPriorityRequestHandler = new UpdateTaskPriorityRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object,
                 mockTaskService.Object,
@@ -78,18 +79,18 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 _distributedCache!
             );
 
-            await updateTaskCompleteRequestHandler.Handle(request, CancellationToken.None);
+            await updateTaskPriorityRequestHandler.Handle(request, CancellationToken.None);
 
             projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
-            mockTaskService.Verify(x => x.UpdateTaskComplete(
+            mockTaskService.Verify(x => x.UpdateTaskPriority(
                 It.IsAny<TaskM>(),  
-                It.IsAny<bool>()
+                It.IsAny<TaskPriority>()
             ));
             
-            Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == 1 && x.IsCompleted == false ));
+            Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == 1 && x.Priority == TaskPriority.None ));
             
-            Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == 1 && x.IsCompleted == true ));
+            Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == 1 && x.Priority == updateTaskPriorityDto.Priority));
             
             Assert.Null(await _distributedCache!.GetStringAsync($"task_{request.TaskId}"));
             Assert.Null(await _distributedCache!.GetStringAsync($"tasks_by_board_{request.BoardId}"));
@@ -105,20 +106,17 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
             
             var projectSecurityServiceMock = SetupProjectSecurityServiceMock();
             
-            var updateTaskDto = new UpdateTaskDto()
+            var updateTaskPriorityDto = new UpdateTaskPriorityDto()
             {
-                Title = "Updated task",
-                Description = "New description",
-                EndDateTimeStamp = 1688595313,
-                PrioritySort = 1
+                Priority = TaskPriority.Priority2
             };
             
-            var request = new UpdateTaskRequest() { ProjectId = 1, BoardId = 1, TaskId = 100, UpdateTaskDto = updateTaskDto };
+            var request = new UpdateTaskPriorityRequest() { ProjectId = 1, BoardId = 1, TaskId = 100, UpdateTaskPriorityDto = updateTaskPriorityDto };
             
             var mediatorMock = SetupMockMediatorService();
             var error = new TaskNotFoundError();
             
-            var updateTaskRequestHandler = new UpdateTaskRequestHandler(
+            var updateTaskPriorityRequestHandler = new UpdateTaskPriorityRequestHandler(
                 _dbContext, 
                 projectSecurityServiceMock.Object, 
                 SetupMockTaskService().Object,
@@ -126,7 +124,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 _distributedCache!
             );
             
-            await updateTaskRequestHandler.Handle(request, CancellationToken.None);
+            await updateTaskPriorityRequestHandler.Handle(request, CancellationToken.None);
             
             projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             

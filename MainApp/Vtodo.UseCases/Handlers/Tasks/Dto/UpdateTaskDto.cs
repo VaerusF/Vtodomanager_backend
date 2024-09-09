@@ -15,10 +15,6 @@ namespace Vtodo.UseCases.Handlers.Tasks.Dto
         public long? EndDateTimeStamp { get; set; }
         
         [Required]
-        [EnumDataType(typeof(TaskPriority))]
-        public TaskPriority Priority { get; set; }
-        
-        [Required]
         public int PrioritySort { get; set; }
         
     }

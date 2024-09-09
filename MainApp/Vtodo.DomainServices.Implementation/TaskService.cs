@@ -27,20 +27,23 @@ internal class TaskService : ITaskService
         return task;
     }
 
-    public void UpdateTask(TaskM task, string title, string description, long? endDateTimeStamp, 
-        TaskPriority priority)
+    public void UpdateTask(TaskM task, string title, string description, long? endDateTimeStamp)
     {
         task.Title = title;
         task.Description = description;
         task.EndDate = endDateTimeStamp == null
             ? null
             : DateTimeOffset.FromUnixTimeSeconds((long)endDateTimeStamp).DateTime;
-        task.Priority = priority;
     }
     
     public void UpdateTaskComplete(TaskM task, bool isCompleted)
     {
         task.IsCompleted = isCompleted;
+    }
+    
+    public void UpdateTaskPriority(TaskM task, TaskPriority priority)
+    {
+        task.Priority = priority;
     }
 
     public void MoveTaskToRoot(TaskM task)

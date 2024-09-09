@@ -35,7 +35,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 Title = "Updated task",
                 Description = "New description",
                 EndDateTimeStamp = 1688595313,
-                Priority = TaskPriority.Priority1,
                 PrioritySort = 1
             };
             
@@ -44,24 +43,15 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 It.IsAny<TaskM>(),  
                 It.IsAny<string>(),  
                 It.IsAny<string>(), 
-                It.IsAny<long?>(),
-                It.IsAny<TaskPriority>())
-            ).Callback((TaskM task, string title, string description, long? endDateTimeStamp,
-                TaskPriority priority) =>
+                It.IsAny<long?>())
+            ).Callback((TaskM task, string title, string description, long? endDateTimeStamp) =>
             {
                 task.Title = title;
                 task.Description = description;
-                
-                if (endDateTimeStamp == null)
-                {
-                    task.EndDate = null;
-                }
-                else
-                {
-                    task.EndDate = DateTimeOffset.FromUnixTimeSeconds((int) endDateTimeStamp).DateTime;
-                }
 
-                task.Priority = priority;
+                task.EndDate = endDateTimeStamp == null
+                    ? null
+                    : DateTimeOffset.FromUnixTimeSeconds((int)endDateTimeStamp).DateTime;
             });
             
             var request = new UpdateTaskRequest() { ProjectId = 1, BoardId = 1, TaskId = 1, UpdateTaskDto = updateTaskDto };
@@ -104,20 +94,17 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 It.IsAny<TaskM>(),  
                 It.IsAny<string>(),  
                 It.IsAny<string>(), 
-                It.IsAny<long?>(),
-                It.IsAny<TaskPriority>()), Times.Once
+                It.IsAny<long?>()), Times.Once
             );
             
             Assert.Null(_dbContext.Tasks.FirstOrDefault(x => x.Id == 1 &&
                  x.Title == "Test update task" && 
                  x.Description == "Test update task" &&
-                 x.Priority == TaskPriority.None &&
                  x.PrioritySort == 0));
             
             Assert.NotNull(_dbContext.Tasks.FirstOrDefault(x => x.Id == 1 &&
                  x.Title == updateTaskDto.Title && 
                  x.Description == updateTaskDto.Description &&
-                 x.Priority == updateTaskDto.Priority &&
                  x.EndDate != null));
             
             Assert.Null(await _distributedCache!.GetStringAsync($"task_{request.TaskId}"));
@@ -139,7 +126,6 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Tasks.Commands
                 Title = "Updated task",
                 Description = "New description",
                 EndDateTimeStamp = 1688595313,
-                Priority = TaskPriority.Priority1,
                 PrioritySort = 1
             };
             
