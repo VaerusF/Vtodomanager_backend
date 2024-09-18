@@ -46,6 +46,11 @@ internal class TaskService : ITaskService
         task.Priority = priority;
     }
 
+    public void SwapTasksPrioritySort(TaskM task, TaskM task2)
+    {
+        (task.PrioritySort, task2.PrioritySort) = (task2.PrioritySort, task.PrioritySort);
+    }
+    
     public void MoveTaskToRoot(TaskM task)
     {
         task.ParentTask = null;
