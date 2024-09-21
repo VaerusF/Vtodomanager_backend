@@ -27,7 +27,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             SetupDbContext();
             SetupDistributedCache();
             
-            var createBoardDto = new CreateBoardDto() { Title ="Create Test Board", PrioritySort = 0};
+            var createBoardDto = new CreateBoardDto() { Title ="Create Test Board", PrioritySort = 2};
             var request = new CreateBoardRequest() { ProjectId = 1, CreateBoardDto = createBoardDto};
             
             var projectSecurityServiceMock = SetupProjectSecurityService();
@@ -77,7 +77,7 @@ namespace Vtodo.UseCases.Tests.Unit.Handlers.Boards.Commands
             
             projectSecurityServiceMock.Verify(x => x.CheckAccess(It.IsIn(request.ProjectId), ProjectRoles.ProjectUpdate), Times.Once);
             
-            Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Title == createBoardDto.Title));
+            Assert.NotNull(_dbContext.Boards.FirstOrDefault(x => x.Title == createBoardDto.Title && x.PrioritySort == createBoardDto.PrioritySort));
             Assert.Null(await _distributedCache!.GetStringAsync($"boards_by_project_{request.ProjectId}"));
             
             CleanUp();

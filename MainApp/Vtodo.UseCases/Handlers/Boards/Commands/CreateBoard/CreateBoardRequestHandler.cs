@@ -44,7 +44,7 @@ namespace Vtodo.UseCases.Handlers.Boards.Commands.CreateBoard
                 return;
             }
             
-            var board = _boardService.CreateBoard(createDto.Title, project);
+            var board = _boardService.CreateBoard(createDto.Title, project, createDto.PrioritySort);
             
             _dbContext.Boards.Add(board);
 
