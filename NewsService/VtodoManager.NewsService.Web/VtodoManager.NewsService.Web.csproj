@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+   <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\VtodoManager.NewsService.Controllers\VtodoManager.NewsService.Controllers.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.DataAccess.Postgres.Migrations\VtodoManager.NewsService.DataAccess.Postgres.Migrations.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.DataAccess.Postgres\VtodoManager.NewsService.DataAccess.Postgres.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.DomainServices.Implementation\VtodoManager.NewsService.DomainServices.Implementation.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.DomainServices.Interfaces\VtodoManager.NewsService.DomainServices.Interfaces.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.Entities\VtodoManager.NewsService.Entities.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.Infrastructure.Implementation\VtodoManager.NewsService.Infrastructure.Implementation.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.Infrastructure.Interfaces\VtodoManager.NewsService.Infrastructure.Interfaces.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.UseCases\VtodoManager.NewsService.UseCases.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="13.0.1" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.8" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.5.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.5.0" />
+    </ItemGroup>
+</Project>

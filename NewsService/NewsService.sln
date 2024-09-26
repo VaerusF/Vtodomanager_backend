@@ -1,0 +1,100 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Controllers", "VtodoManager.NewsService.Controllers\VtodoManager.NewsService.Controllers.csproj", "{9B965610-DE32-4D70-B287-9F43D2F66C34}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.DataAccess.Postgres", "VtodoManager.NewsService.DataAccess.Postgres\VtodoManager.NewsService.DataAccess.Postgres.csproj", "{0E7972DA-0DB9-4A18-B51C-40DE649A649D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.DataAccess.Postgres.Migrations", "VtodoManager.NewsService.DataAccess.Postgres.Migrations\VtodoManager.NewsService.DataAccess.Postgres.Migrations.csproj", "{0F807DB7-3240-414B-ACEB-BD3F81396683}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.DomainServices.Implementation", "VtodoManager.NewsService.DomainServices.Implementation\VtodoManager.NewsService.DomainServices.Implementation.csproj", "{97F15A0B-CDFF-4007-968A-413B8AB59124}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.DomainServices.Implementation.Tests.Unit", "VtodoManager.NewsService.DomainServices.Implementation.Tests.Unit\VtodoManager.NewsService.DomainServices.Implementation.Tests.Unit.csproj", "{AB3B5454-8E60-41B4-A274-DABE25933578}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.DomainServices.Interfaces", "VtodoManager.NewsService.DomainServices.Interfaces\VtodoManager.NewsService.DomainServices.Interfaces.csproj", "{FE131597-3EB9-412D-A590-46A8DC1877BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Entities", "VtodoManager.NewsService.Entities\VtodoManager.NewsService.Entities.csproj", "{F53A99BF-3F8B-4189-A262-223BAB601F4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Infrastructure.Implementation", "VtodoManager.NewsService.Infrastructure.Implementation\VtodoManager.NewsService.Infrastructure.Implementation.csproj", "{06E9D340-E4D3-4D1B-9C66-F9CFCD9C9744}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Infrastructure.Interfaces", "VtodoManager.NewsService.Infrastructure.Interfaces\VtodoManager.NewsService.Infrastructure.Interfaces.csproj", "{2A0A0059-3147-4DBD-A318-02F68FCBCD25}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Logger.Tests", "VtodoManager.NewsService.Logger.Tests\VtodoManager.NewsService.Logger.Tests.csproj", "{21064AC2-BDA6-48E7-ACE5-11190AF99F90}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.UseCases.Tests.Unit", "VtodoManager.NewsService.UseCases.Tests.Unit\VtodoManager.NewsService.UseCases.Tests.Unit.csproj", "{9C8329D2-1911-4DFD-82AB-BDD267D20D29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Utils", "VtodoManager.NewsService.Utils\VtodoManager.NewsService.Utils.csproj", "{24EBA4A4-E188-4609-8D2D-88AF114833B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Web", "VtodoManager.NewsService.Web\VtodoManager.NewsService.Web.csproj", "{4FD99607-560E-4245-BE3C-CCB6B73F3C50}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.UseCases", "VtodoManager.NewsService.UseCases\VtodoManager.NewsService.UseCases.csproj", "{E17C38CD-42CB-41AC-8F55-D78FF9D3898D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Infrastructure.Implementation.Tests.Unit", "VtodoManager.NewsService.Infrastructure.Implementation.Tests.Unit\VtodoManager.NewsService.Infrastructure.Implementation.Tests.Unit.csproj", "{3DF87228-0F58-4D94-9D9A-B209F972B996}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9B965610-DE32-4D70-B287-9F43D2F66C34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B965610-DE32-4D70-B287-9F43D2F66C34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B965610-DE32-4D70-B287-9F43D2F66C34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B965610-DE32-4D70-B287-9F43D2F66C34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E7972DA-0DB9-4A18-B51C-40DE649A649D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E7972DA-0DB9-4A18-B51C-40DE649A649D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E7972DA-0DB9-4A18-B51C-40DE649A649D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E7972DA-0DB9-4A18-B51C-40DE649A649D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F807DB7-3240-414B-ACEB-BD3F81396683}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F807DB7-3240-414B-ACEB-BD3F81396683}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F807DB7-3240-414B-ACEB-BD3F81396683}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F807DB7-3240-414B-ACEB-BD3F81396683}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97F15A0B-CDFF-4007-968A-413B8AB59124}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97F15A0B-CDFF-4007-968A-413B8AB59124}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97F15A0B-CDFF-4007-968A-413B8AB59124}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97F15A0B-CDFF-4007-968A-413B8AB59124}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB3B5454-8E60-41B4-A274-DABE25933578}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB3B5454-8E60-41B4-A274-DABE25933578}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB3B5454-8E60-41B4-A274-DABE25933578}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB3B5454-8E60-41B4-A274-DABE25933578}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE131597-3EB9-412D-A590-46A8DC1877BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE131597-3EB9-412D-A590-46A8DC1877BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE131597-3EB9-412D-A590-46A8DC1877BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE131597-3EB9-412D-A590-46A8DC1877BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F53A99BF-3F8B-4189-A262-223BAB601F4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F53A99BF-3F8B-4189-A262-223BAB601F4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F53A99BF-3F8B-4189-A262-223BAB601F4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F53A99BF-3F8B-4189-A262-223BAB601F4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06E9D340-E4D3-4D1B-9C66-F9CFCD9C9744}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06E9D340-E4D3-4D1B-9C66-F9CFCD9C9744}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06E9D340-E4D3-4D1B-9C66-F9CFCD9C9744}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06E9D340-E4D3-4D1B-9C66-F9CFCD9C9744}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A0A0059-3147-4DBD-A318-02F68FCBCD25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A0A0059-3147-4DBD-A318-02F68FCBCD25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A0A0059-3147-4DBD-A318-02F68FCBCD25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A0A0059-3147-4DBD-A318-02F68FCBCD25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21064AC2-BDA6-48E7-ACE5-11190AF99F90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21064AC2-BDA6-48E7-ACE5-11190AF99F90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21064AC2-BDA6-48E7-ACE5-11190AF99F90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21064AC2-BDA6-48E7-ACE5-11190AF99F90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C8329D2-1911-4DFD-82AB-BDD267D20D29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C8329D2-1911-4DFD-82AB-BDD267D20D29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C8329D2-1911-4DFD-82AB-BDD267D20D29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C8329D2-1911-4DFD-82AB-BDD267D20D29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24EBA4A4-E188-4609-8D2D-88AF114833B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24EBA4A4-E188-4609-8D2D-88AF114833B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24EBA4A4-E188-4609-8D2D-88AF114833B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24EBA4A4-E188-4609-8D2D-88AF114833B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FD99607-560E-4245-BE3C-CCB6B73F3C50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FD99607-560E-4245-BE3C-CCB6B73F3C50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FD99607-560E-4245-BE3C-CCB6B73F3C50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FD99607-560E-4245-BE3C-CCB6B73F3C50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E17C38CD-42CB-41AC-8F55-D78FF9D3898D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E17C38CD-42CB-41AC-8F55-D78FF9D3898D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E17C38CD-42CB-41AC-8F55-D78FF9D3898D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E17C38CD-42CB-41AC-8F55-D78FF9D3898D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DF87228-0F58-4D94-9D9A-B209F972B996}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DF87228-0F58-4D94-9D9A-B209F972B996}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DF87228-0F58-4D94-9D9A-B209F972B996}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DF87228-0F58-4D94-9D9A-B209F972B996}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

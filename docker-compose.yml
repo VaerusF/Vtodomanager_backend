@@ -3,6 +3,8 @@ networks:
     driver: bridge
   vtodo_main_app_dev:
     driver: bridge
+  vtodo_news_service_dev:
+    driver: bridge
   vtodo_logger_dev:
     driver: bridge
 services:
@@ -118,7 +120,93 @@ services:
       retries: 5
     volumes:
       - ./MainApp/Builds/redis_vtodo_main_web_app_dev:/var/lib/redis
-      
+
+
+
+  vtodo_news_service_dev:
+    container_name: vtodo_news_service_dev
+    build:
+      context: .
+      dockerfile: ./NewsService/VtodoManager.NewsService.Web/Dockerfile
+    ports:
+      - "8084:8084"
+      - "8085:8085"
+    restart: on-failure
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8084
+      - ASPNETCORE_HTTPS_PORT=8085
+      - ProjectFilesOptions__MaxProjectFileSizeInMb=512
+      - HasherOptions__KeySize=64
+      - HasherOptions__Iterations=400000
+      - IpListOptions__FrontClientAddress=http://127.0.0.1:3000
+      - Hostname=vtodo_news_service_dev
+      - JwtOptions__Key=njkfdgnaslgfnsl;nsf;lgnsf;lnsfglsfdnglsgbgibnvonrtiosdgbnro234234tg
+      - JwtOptions__RefreshKey=gdfgvbhusdSDFdjadfgbcyuaewfgdyweuagfuyewgfuywefgyuwe3274
+      - JwtOptions__Issuer=http://127.0.0.1:8084
+      - ConnectionStrings__PgSqlConnection=Server=vtodo_news_service_postgres_db_dev;Port=5432;Database=vtodo_news_service;Username=vtodo_news_service_user_dev;Password=djyhryijdaGYT5432QFT453TF;Application Name=VtodoNewsService;
+      - ConnectionStrings__RabbitMqLogger=amqp://vtodo_logger_rabbit_user_dev:sdfgfsdjhsytjyurjyrxjhnrjsyj@rabbitmq_vtodo_logger_dev:5672
+      - ConnectionStrings__RedisVtodoManagerNewsService=redis_vtodo_news_service_dev:6379,abortConnect=False,password=fgnsfgnbnhgfdshbvtrsgtersgtszvstgstgvstgstt,user=vtodo_news_service_redis_user_dev
+    networks:
+      - vtodo_logger_dev
+      - vtodo_news_service_dev
+    volumes:
+      - ./NewsService/Builds/appdata/:/VtodoNewsServiceData/
+    depends_on:
+      vtodo_news_service_postgres_db_dev:
+        condition: service_healthy
+        restart: true
+      rabbitmq_vtodo_logger_dev:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail http://localhost:8084/health_check || exit 1" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 60s
+  vtodo_news_service_postgres_db_dev:
+    container_name: vtodo_news_service_postgres_db_dev
+    image: postgres:14
+    restart: on-failure
+    environment:
+      POSTGRES_USER: vtodo_news_service_user_dev
+      POSTGRES_PASSWORD: djyhryijdaGYT5432QFT453TF
+      POSTGRES_DB: vtodo_news_service
+    ports:
+      - "5436:5432"
+    networks:
+      - vtodo_news_service_dev
+    volumes:
+      - vtodo_news_service_postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U vtodo_news_service_user_dev -d vtodo_news_service"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 60s
+  redis_vtodo_news_service_dev:
+    image: redis:7.4.0
+    hostname: redis_vtodo_news_service_dev
+    environment:
+      - REDIS_PASSWORD=ttfrghszhbntyszbstbshbtsrhtrhbtr
+      - REDIS_USER=vtodo_news_service_redis_user_dev
+      - REDIS_USER_PASSWORD=fgnsfgnbnhgfdshbvtrsgtersgtszvstgstgvstgstt
+    networks:
+      - vtodo_news_service_dev
+    restart: on-failure
+    ports:
+      - '6380:6379'
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "ttfrghszhbntyszbstbshbtsrhtrhbtr", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - ./NewsService/Builds/redis_vtodo_news_service_dev:/var/lib/redis
+
+
+
   vtodo_logger_service_dev:
     container_name: vtodo_logger_service_dev
     build:
@@ -195,5 +283,7 @@ services:
 volumes:
   vtodo_postgres_data_dev:
     name: vtodo_postgres_data_dev
+  vtodo_news_service_postgres_data_dev:
+    name: vtodo_news_service_postgres_data_dev
   vtodo_logger_postgres_data_dev:
     name: vtodo_logger_postgres_data_dev

@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="13.0.1" />
+      <PackageReference Include="MediatR" Version="12.2.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\VtodoManager.NewsService.DomainServices.Interfaces\VtodoManager.NewsService.DomainServices.Interfaces.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.Entities\VtodoManager.NewsService.Entities.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.Infrastructure.Interfaces\VtodoManager.NewsService.Infrastructure.Interfaces.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Handlers\Errors\Dto\AlreadyExists\" />
+      <Folder Include="Handlers\Errors\Dto\InvalidOperation\" />
+      <Folder Include="Handlers\Errors\Dto\Validation\" />
+      <Folder Include="Handlers\News\Queries\" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <RootNamespace>VtodoManager.NewsService.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <OutputPath>bin\debug\</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <OutputPath>bin\release\</OutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.3" />
+      <PackageReference Include="xunit" Version="2.7.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\VtodoManager.NewsService.Controllers\VtodoManager.NewsService.Controllers.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.DataAccess.Postgres.Migrations\VtodoManager.NewsService.DataAccess.Postgres.Migrations.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.DataAccess.Postgres\VtodoManager.NewsService.DataAccess.Postgres.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.DomainServices.Implementation\VtodoManager.NewsService.DomainServices.Implementation.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.DomainServices.Interfaces\VtodoManager.NewsService.DomainServices.Interfaces.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.Infrastructure.Implementation\VtodoManager.NewsService.Infrastructure.Implementation.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.UseCases\VtodoManager.NewsService.UseCases.csproj" />
+      <ProjectReference Include="..\VtodoManager.NewsService.Web\VtodoManager.NewsService.Web.csproj" />
+    </ItemGroup>
+
+</Project>
