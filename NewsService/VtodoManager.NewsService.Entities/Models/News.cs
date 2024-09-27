@@ -16,5 +16,7 @@ public class News
     [Required]
     public string Content { get; set; } = string.Empty;
     
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
     public ICollection<NewsFile> Files { get; set; } = default!;
 }
