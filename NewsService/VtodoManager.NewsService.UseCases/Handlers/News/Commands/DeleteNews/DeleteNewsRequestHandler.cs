@@ -6,13 +6,13 @@ using VtodoManager.NewsService.UseCases.Handlers.Errors.Dto.NotFound;
 
 namespace VtodoManager.NewsService.UseCases.Handlers.News.Commands.DeleteNews;
 
-internal class DeleteNewRequestHandler: IRequestHandler<DeleteNewsRequest>
+internal class DeleteNewsRequestHandler: IRequestHandler<DeleteNewsRequest>
 {
     private readonly IDbContext _dbContext;
     private readonly IMediator _mediator;
     private readonly IDistributedCache _distributedCache;
     
-    public DeleteNewRequestHandler(
+    public DeleteNewsRequestHandler(
         IDbContext dbContext, 
         IMediator mediator, 
         IDistributedCache distributedCache)

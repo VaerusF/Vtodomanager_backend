@@ -18,6 +18,9 @@ namespace VtodoManager.NewsService.DataAccess.Postgres
         {
             modelBuilder.Entity<NewsFile>()
                 .HasKey(m => new { m.NewsId, m.FileName });
+
+            modelBuilder.Entity<News>()
+                .HasIndex(e => new { e.Title, e.Content });
         }
     }
 }
