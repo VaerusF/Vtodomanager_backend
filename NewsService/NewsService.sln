@@ -18,7 +18,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.In
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Infrastructure.Interfaces", "VtodoManager.NewsService.Infrastructure.Interfaces\VtodoManager.NewsService.Infrastructure.Interfaces.csproj", "{2A0A0059-3147-4DBD-A318-02F68FCBCD25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Logger.Tests", "VtodoManager.NewsService.Logger.Tests\VtodoManager.NewsService.Logger.Tests.csproj", "{21064AC2-BDA6-48E7-ACE5-11190AF99F90}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.Tests", "VtodoManager.NewsService.Tests\VtodoManager.NewsService.Tests.csproj", "{21064AC2-BDA6-48E7-ACE5-11190AF99F90}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtodoManager.NewsService.UseCases.Tests.Unit", "VtodoManager.NewsService.UseCases.Tests.Unit\VtodoManager.NewsService.UseCases.Tests.Unit.csproj", "{9C8329D2-1911-4DFD-82AB-BDD267D20D29}"
 EndProject

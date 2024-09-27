@@ -26,6 +26,5 @@
       <Folder Include="Handlers\Errors\Dto\AlreadyExists\" />
       <Folder Include="Handlers\Errors\Dto\InvalidOperation\" />
       <Folder Include="Handlers\Errors\Dto\Validation\" />
-      <Folder Include="Handlers\News\Queries\" />
     </ItemGroup>
 </Project>

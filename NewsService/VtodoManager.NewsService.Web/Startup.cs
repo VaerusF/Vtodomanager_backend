@@ -11,8 +11,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using VtodoManager.NewsService.Controllers;
 using VtodoManager.NewsService.DataAccess.Postgres;
+using VtodoManager.NewsService.DomainServices.Interfaces;
 using VtodoManager.NewsService.Infrastructure.Implementation.Options;
 using VtodoManager.NewsService.Infrastructure.Implementation.Services;
 using VtodoManager.NewsService.Infrastructure.Interfaces.DataAccess;
@@ -81,7 +83,12 @@ namespace VtodoManager.NewsService.Web
 
             services.AddScoped<IConfigService, ConfigService>();
             services.AddScoped<ILogProducerService, LogProducerService>();
-
+            services.AddScoped<INewsService, DomainServices.Implementation.NewsService>();
+            services.AddScoped<IRedisKeysUtilsService, RedisKeysUtilsService>();
+            
+            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(
+                Configuration.GetConnectionString("RedisVtodoManagerNewsService")!));
+            
             services.AddHttpContextAccessor();
             
             services.AddCors();

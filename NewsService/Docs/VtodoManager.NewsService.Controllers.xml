@@ -4,5 +4,22 @@
         <name>VtodoManager.NewsService.Controllers</name>
     </assembly>
     <members>
+        <member name="M:VtodoManager.NewsService.Controllers.NewsController.GetPagedNews(VtodoManager.NewsService.UseCases.Handlers.News.Dto.GetPagedNewsDto)">
+            <summary>
+            Get news by page count and count on page
+            </summary>
+            <param name="pagedNewsDto">Dto with page count and count on page</param>
+            <response code="200">Returns list news dto</response>
+            <returns></returns>
+        </member>
+        <member name="M:VtodoManager.NewsService.Controllers.NewsController.GetPagedNews(System.Int64)">
+            <summary>
+            Get single news
+            </summary>
+            <param name="newsId"></param>
+            <response code="200">Returns news dto</response>
+            <response code="404">News not found</response>
+            <returns></returns>
+        </member>
     </members>
 </doc>

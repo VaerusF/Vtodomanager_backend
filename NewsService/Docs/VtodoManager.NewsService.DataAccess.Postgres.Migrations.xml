@@ -4,5 +4,41 @@
         <name>VtodoManager.NewsService.DataAccess.Postgres.Migrations</name>
     </assembly>
     <members>
+        <member name="T:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.InitialNewsService">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.InitialNewsService.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.InitialNewsService.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.InitialNewsService.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.AddIndexNews">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.AddIndexNews.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.AddIndexNews.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.AddIndexNews.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.AddCreatedAtinNews">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.AddCreatedAtinNews.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.AddCreatedAtinNews.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:VtodoManager.NewsService.DataAccess.Postgres.Migrations.Migrations.AddCreatedAtinNews.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
     </members>
 </doc>
