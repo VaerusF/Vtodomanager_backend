@@ -26,7 +26,7 @@ public class NewsController : ControllerBase
     /// <returns></returns>
     [AllowAnonymous]
     [HttpGet("")]
-    public async Task<List<NewsDto>?> GetPagedNews([FromBody] GetPagedNewsDto pagedNewsDto)
+    public async Task<List<NewsDto>?> GetPagedNews([FromQuery] GetPagedNewsDto pagedNewsDto)
     {
         return await _mediator.Send(new GetPagedNewsRequest() { GetPagedNewsDto = pagedNewsDto});
     }
