@@ -57,7 +57,7 @@ public class GetPagedNewsRequestHandlerTest
         Assert.NotNull(result);
         Assert.NotNull(await _distributedCache!.GetStringAsync($"news_paged_{dto.PageCount}_count_{dto.CountOnPage}"));
         
-        Assert.Equal(dto.CountOnPage, result.Count);
+        Assert.Equal((int)dto.CountOnPage, result.Count);
         CleanUp();
     }
     

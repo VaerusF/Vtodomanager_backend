@@ -151,7 +151,7 @@ namespace VtodoManager.NewsService.Web
             app.UseRouting();
             
             app.UseCors(x => x
-                .AllowCredentials()
+                .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
             

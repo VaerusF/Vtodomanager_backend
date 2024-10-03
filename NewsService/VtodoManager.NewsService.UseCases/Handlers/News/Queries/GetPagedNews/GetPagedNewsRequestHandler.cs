@@ -35,8 +35,8 @@ internal class GetPagedNewsRequestHandler: IRequestHandler<GetPagedNewsRequest, 
         
         var news = _dbContext.News
             .AsNoTracking()
-            .Skip((pagedDto.PageCount - 1) * pagedDto.CountOnPage)
-            .Take(pagedDto.CountOnPage)
+            .Skip((int)((pagedDto.PageCount - 1) * pagedDto.CountOnPage))
+            .Take((int)pagedDto.CountOnPage)
             .ToList();
 
         var listDto = news
