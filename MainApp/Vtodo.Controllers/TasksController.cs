@@ -5,6 +5,7 @@ using Vtodo.UseCases.Handlers.Tasks.Commands.DeleteTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherBoard;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToAnotherTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.MoveTaskToRoot;
+using Vtodo.UseCases.Handlers.Tasks.Commands.SwapTasksPrioritySort;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTask;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTaskComplete;
 using Vtodo.UseCases.Handlers.Tasks.Commands.UpdateTaskPriority;
@@ -145,6 +146,31 @@ namespace Vtodo.Controllers
                 BoardId = boardId,
                 TaskId = taskId, 
                 UpdateTaskPriorityDto = updateTaskPriorityDto
+            });
+        }
+        
+        /// <summary>
+        /// Swap task priority
+        /// </summary>
+        /// <param name="projectId">Project id</param>
+        /// <param name="boardId">Board id</param> 
+        /// <param name="taskId1">Task id</param>
+        /// <param name="taskId2">Task2 id</param>
+        /// <response code="200"></response>
+        /// <response code="400">Task ids should not be equals</response>
+        /// <response code="400">Board ids should be equals</response>
+        /// <response code="401">Unauthorized</response>
+        /// <response code="403">Access denied</response>
+        /// <response code="404">Task not found</response>
+        [HttpPut("{taskId1:long}/swap_with/{taskId2:long}")]
+        public async Task SwapTasksPrioritySort(long projectId, long boardId, long taskId1, long taskId2)
+        {
+            await _mediator.Send(new SwapTasksPrioritySortRequest()
+            {
+                ProjectId = projectId, 
+                BoardId = boardId, 
+                TaskId1 = taskId1, 
+                TaskId2 = taskId2
             });
         }
         
