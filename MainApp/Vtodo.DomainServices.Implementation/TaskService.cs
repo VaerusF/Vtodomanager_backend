@@ -8,14 +8,14 @@ namespace Vtodo.DomainServices.Implementation;
 internal class TaskService : ITaskService
 {
     public TaskM CreateTask(string title, string description, Board board, bool isCompleted = false, 
-        long? endDateTimeStamp = null, TaskPriority priority = TaskPriority.None, TaskM? newParentTaskM = null)
+        long? endDateTimeStamp = null, int prioritySort = 0, TaskPriority priority = TaskPriority.None, TaskM? newParentTaskM = null)
     {
         var task = new TaskM()
         {
             Title = title,
             Description = description,
             Priority = priority,
-            PrioritySort = 0,
+            PrioritySort = prioritySort,
             EndDate = endDateTimeStamp == null
                 ? null
                 : DateTimeOffset.FromUnixTimeSeconds((long)endDateTimeStamp).DateTime,

@@ -67,7 +67,8 @@ namespace Vtodo.UseCases.Handlers.Tasks.Commands.CreateTask
                 createDto.Title, 
                 createDto.Description,
                 board, 
-                newParentTaskM: parentTask
+                newParentTaskM: parentTask,
+                prioritySort: createDto.PrioritySort
             );
             
             _dbContext.Tasks.Add(task);
